@@ -1212,6 +1212,26 @@ export const AIWorkspace: React.FC = () => {
             </button>
           </div>
 
+          {/* Capabilities strip */}
+          <div className="flex flex-wrap items-center gap-1.5 text-[10.5px] text-slate-500 border border-slate-150 bg-slate-50/50 px-4 py-2 rounded-md -mt-3 select-none print:hidden">
+            <span className="font-bold text-slate-400 uppercase tracking-wider text-[9px] mr-1.5">Capabilities:</span>
+            <span className="flex items-center gap-1 font-medium">
+              <span>Answer Questions</span>
+            </span>
+            <span className="text-slate-350 mx-0.5">·</span>
+            <span className="flex items-center gap-1 font-medium">
+              <span>Notify Stations</span>
+            </span>
+            <span className="text-slate-350 mx-0.5">·</span>
+            <span className="flex items-center gap-1 font-medium">
+              <span>Flag Suspects</span>
+            </span>
+            <span className="text-slate-350 mx-0.5">·</span>
+            <span className="flex items-center gap-1 font-medium">
+              <span>Log Case Notes</span>
+            </span>
+          </div>
+
           {report && currentThreadId ? (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
               
@@ -1223,13 +1243,58 @@ export const AIWorkspace: React.FC = () => {
                     <h3 className="text-xs font-bold text-white uppercase tracking-widest font-mono">
                       Contextual Follow-up Investigation Console
                     </h3>
+                    <div className="ml-auto flex items-center gap-1.5 px-2 py-0.5 rounded bg-white/10 border border-white/10 text-[9px] font-mono font-bold text-emerald-350 uppercase select-none">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                      <span>AI Ready</span>
+                    </div>
                   </div>
 
                   {/* Q&A Log */}
                   <div className="max-h-[450px] overflow-y-auto border-b border-slate-200">
                     {followUpMessages.length === 0 ? (
-                      <div className="p-8 text-center text-slate-400 font-sans text-xs">
-                        No messages sent yet. Ask a follow-up query or command station alerts to begin.
+                      <div className="p-8 flex flex-col items-center justify-center text-center gap-4 animate-in fade-in duration-300">
+                        <div className="text-slate-400 font-sans text-xs max-w-md">
+                          No messages sent yet. Start typing below, or use one of the suggested case-specific commands to initiate action:
+                        </div>
+                        <div className="flex flex-col gap-2 items-stretch max-w-md w-full">
+                          {(() => {
+                            const firstSuspect = report?.associatedSuspects[0]?.name || 'suspect';
+                            const stationName = 'Halasuru';
+                            
+                            const prompt1 = `Has ${firstSuspect} been arrested before?`;
+                            const prompt2 = `Notify ${stationName} about ${firstSuspect}'s last known location`;
+                            const prompt3 = `Flag ${firstSuspect} as high priority`;
+
+                            return (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => setFollowUpInput(prompt1)}
+                                  className="px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100 hover:border-slate-350 border border-slate-200 rounded font-sans text-xs font-semibold text-slate-700 transition-all cursor-pointer text-left flex items-center gap-2 active:scale-99 shadow-xs"
+                                >
+                                  <span className="text-slate-400">🔍</span>
+                                  <span>{prompt1}</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setFollowUpInput(prompt2)}
+                                  className="px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100 hover:border-slate-350 border border-slate-200 rounded font-sans text-xs font-semibold text-slate-700 transition-all cursor-pointer text-left flex items-center gap-2 active:scale-99 shadow-xs"
+                                >
+                                  <span className="text-slate-400">🚨</span>
+                                  <span>{prompt2}</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setFollowUpInput(prompt3)}
+                                  className="px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100 hover:border-slate-350 border border-slate-200 rounded font-sans text-xs font-semibold text-slate-700 transition-all cursor-pointer text-left flex items-center gap-2 active:scale-99 shadow-xs"
+                                >
+                                  <span className="text-slate-400">🚩</span>
+                                  <span>{prompt3}</span>
+                                </button>
+                              </>
+                            );
+                          })()}
+                        </div>
                       </div>
                     ) : (
                       followUpMessages.map((msg, idx) => (
@@ -1328,9 +1393,9 @@ export const AIWorkspace: React.FC = () => {
                   </div>
                   
                   {recentActions.length === 0 ? (
-                    <p className="text-xs text-slate-400 font-sans text-center py-6">
-                      No directive actions taken in this session yet.
-                    </p>
+                    <div className="text-xs text-slate-450 font-sans text-center py-6 leading-relaxed">
+                      Actions taken here — notifications, suspect flags, case notes — will appear as a timeline below.
+                    </div>
                   ) : (
                     <div className="flex flex-col gap-3 font-mono text-[11px]">
                       {recentActions.map((act, idx) => (
@@ -1351,13 +1416,33 @@ export const AIWorkspace: React.FC = () => {
                       <ListTodo className="w-4.5 h-4.5 text-slate-500" />
                       <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Reference Case Directives</h3>
                     </div>
-                    <div className="flex flex-col gap-2 font-sans text-[11px] text-slate-600 leading-normal">
-                      {report.recommendedActions.map((action, idx) => (
-                        <div key={idx} className="flex gap-2 items-start p-1.5 hover:bg-slate-50 rounded">
-                          <span className="font-mono text-slate-400">{idx + 1}.</span>
-                          <span>{action}</span>
-                        </div>
-                      ))}
+                    <div className="flex flex-col gap-2.5 font-sans text-[11.5px] text-slate-700 leading-normal">
+                      {report.recommendedActions.map((action, idx) => {
+                        const convertDirectiveToPrompt = (act: string) => {
+                          let prompt = act.replace(/\bLOC\b/i, 'lookup circular').trim();
+                          if (!prompt.toLowerCase().startsWith('ask') && !prompt.toLowerCase().startsWith('please')) {
+                            prompt = `Please ${prompt.charAt(0).toLowerCase() + prompt.slice(1)}`;
+                          }
+                          return prompt;
+                        };
+
+                        return (
+                          <div key={idx} className="flex flex-col gap-1.5 p-2 hover:bg-slate-50/80 border border-transparent hover:border-slate-100 rounded transition-all">
+                            <div className="flex gap-2 items-start">
+                              <span className="font-mono text-slate-400 font-bold">{idx + 1}.</span>
+                              <span>{action}</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setFollowUpInput(convertDirectiveToPrompt(action))}
+                              className="text-[9.5px] font-bold text-brand-primary hover:text-brand-primary-light flex items-center gap-0.5 mt-0.5 ml-5 cursor-pointer self-start transition-all uppercase tracking-wider"
+                            >
+                              <span>Ask AI to action this</span>
+                              <ArrowRight className="w-3 h-3 text-brand-secondary" />
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
