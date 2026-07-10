@@ -17,7 +17,6 @@ import {
   Search,
   X,
   Compass,
-  Link,
   ChevronRight,
   Phone,
   CreditCard,
@@ -575,7 +574,7 @@ export const CriminalNetwork: React.FC = () => {
                 >
                   <option value="">Select node...</option>
                   {initialNodes.map(n => (
-                    <option key={n.id} value={n.id}>{n.data?.label.toString().split('\n')[0]}</option>
+                    <option key={n.id} value={n.id}>{((n.data as any)?.label || '').toString().split('\n')[0]}</option>
                   ))}
                 </select>
               </div>
@@ -589,7 +588,7 @@ export const CriminalNetwork: React.FC = () => {
                 >
                   <option value="">Select node...</option>
                   {initialNodes.map(n => (
-                    <option key={n.id} value={n.id}>{n.data?.label.toString().split('\n')[0]}</option>
+                    <option key={n.id} value={n.id}>{((n.data as any)?.label || '').toString().split('\n')[0]}</option>
                   ))}
                 </select>
               </div>
@@ -620,7 +619,7 @@ export const CriminalNetwork: React.FC = () => {
                 <div className="flex flex-wrap items-center gap-1">
                   {shortestPath.nodes.map((nodeId, idx) => {
                     const nodeObj = initialNodes.find(n => n.id === nodeId);
-                    const name = nodeObj ? nodeObj.data?.label.toString().split('\n')[0] : nodeId;
+                    const name = nodeObj ? ((nodeObj.data as any)?.label || '').toString().split('\n')[0] : nodeId;
                     return (
                       <React.Fragment key={nodeId}>
                         {idx > 0 && <ChevronRight className="w-3 h-3 text-slate-400 shrink-0" />}
