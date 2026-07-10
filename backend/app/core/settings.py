@@ -1,0 +1,70 @@
+from functools import cached_property
+
+from pydantic import Field, PostgresDsn, computed_field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    """Environment-driven application settings."""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
+
+    app_name: str = "KSP Crime Intelligence API"
+    app_version: str = "0.1.0"
+    environment: str = "development"
+    debug: bool = False
+    log_level: str = "INFO"
+
+    api_prefix: str = "/api/v1"
+    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:5173"])
+
+    postgres_host: str = "localhost"
+    postgres_port: int = 5432
+    postgres_db: str = "ksp_crime_intel"
+    postgres_user: str = "postgres"
+    postgres_password: str = "postgres"
+
+    database_echo: bool = False
+    database_pool_size: int = 10
+    database_max_overflow: int = 20
+
+    jwt_secret_key: str = "change-me-before-production"
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = 60
+
+    ai_provider: str = "none"
+    gemini_api_key: str | None = None
+    gemini_model_name: str = "gemini-1.5-pro"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @cached_property
+    def database_url(self) -> str:
+        import os
+        env_url = os.environ.get("DATABASE_URL")
+        if env_url:
+            return env_url
+
+        import socket
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(0.2)
+                s.connect((self.postgres_host, self.postgres_port))
+        except (socket.timeout, ConnectionRefusedError, OSError):
+            return "sqlite+aiosqlite:///ksp_crime_intel.db"
+
+        return str(
+            PostgresDsn.build(
+                scheme="postgresql+asyncpg",
+                username=self.postgres_user,
+                password=self.postgres_password,
+                host=self.postgres_host,
+                port=self.postgres_port,
+                path=f"/{self.postgres_db}",
+            )
+        )
+

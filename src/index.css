@@ -1,0 +1,93 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+@import "@xyflow/react/dist/style.css";
+
+@theme {
+  --color-brand-primary: #0f1e36; /* Deep navy / Karnataka Police primary */
+  --color-brand-primary-light: #1e3a5f;
+  --color-brand-secondary: #b89020; /* Gold / KSP Accent */
+  --color-brand-accent: #b91c1c; /* Crimson alert */
+  --color-brand-success: #15803d; /* Safe green */
+  --color-brand-warning: #d97706; /* Warning yellow */
+  
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+:root {
+  font-family: var(--font-sans);
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbars for enterprise lists and dashboard elements */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Leaflet maps custom markers and control styling */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  font-family: inherit !important;
+}
+
+/* React Flow styling custom overrides for high-fidelity network graphics */
+.react-flow {
+  background-color: #f8fafc !important;
+}
+.react-flow__edge-path {
+  stroke: #94a3b8 !important;
+  stroke-width: 2 !important;
+}
+.react-flow__handle {
+  background-color: #0f1e36 !important;
+  border: 2px solid #ffffff !important;
+}
+
+@keyframes map-pulse-critical {
+  0% {
+    box-shadow: 0 0 0 0 rgba(185, 28, 28, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(185, 28, 28, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(185, 28, 28, 0);
+  }
+}
+@keyframes map-pulse-major {
+  0% {
+    box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(217, 119, 6, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(217, 119, 6, 0);
+  }
+}
+
+.pulse-marker-critical {
+  animation: map-pulse-critical 1.8s infinite !important;
+}
+.pulse-marker-major {
+  animation: map-pulse-major 1.8s infinite !important;
+}

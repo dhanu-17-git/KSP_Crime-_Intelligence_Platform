@@ -1,0 +1,196 @@
+/* ============================================
+   OFFICIAL REPORT — A4 PRINT STYLESHEET
+   Karnataka State Police Crime Intelligence Bureau
+   ============================================ */
+
+@media print {
+  /* Kill everything outside the report shell */
+  body * {
+    visibility: hidden;
+  }
+  #official-report,
+  #official-report * {
+    visibility: visible;
+  }
+  #official-report {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+
+  /* Hide the on-screen action bar */
+  .report-action-bar {
+    display: none !important;
+  }
+
+  /* A4 page setup */
+  @page {
+    size: A4 portrait;
+    margin: 18mm 16mm 20mm 16mm;
+  }
+
+  /* Page break helpers */
+  .report-page-break {
+    page-break-before: always;
+  }
+  .report-avoid-break {
+    page-break-inside: avoid;
+  }
+
+  /* Typography overrides for print */
+  #official-report {
+    font-size: 10pt;
+    line-height: 1.45;
+    color: #000;
+    background: #fff;
+  }
+
+  #official-report table {
+    font-size: 9pt;
+  }
+
+  /* Ensure borders print */
+  #official-report table,
+  #official-report th,
+  #official-report td {
+    border-color: #333 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Force background colors in classification bands */
+  .report-classification-band {
+    background-color: #0f1e36 !important;
+    color: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Running footer via CSS */
+  #official-report .report-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-top: 1px solid #333;
+    padding-top: 4pt;
+    font-size: 7pt;
+    color: #666;
+  }
+}
+
+/* ============================================
+   SCREEN STYLES — dossier formatting
+   ============================================ */
+
+.report-page {
+  font-family: 'Times New Roman', 'Georgia', serif;
+  background: #fff;
+  color: #111;
+  min-height: 100vh;
+}
+
+/* Section header style */
+.report-section-header {
+  font-family: 'Inter', 'Arial', sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #0f1e36;
+  border-bottom: 2px solid #0f1e36;
+  padding-bottom: 6px;
+  margin-bottom: 14px;
+}
+
+/* Table styling — thin borders, no rounded corners, no shadows */
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  font-family: 'Inter', 'Arial', sans-serif;
+}
+.report-table th {
+  background: #f1f5f9;
+  color: #0f1e36;
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 7px 10px;
+  border: 1px solid #cbd5e1;
+}
+.report-table td {
+  padding: 7px 10px;
+  border: 1px solid #e2e8f0;
+  vertical-align: top;
+  font-size: 10.5px;
+  line-height: 1.4;
+}
+.report-table tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+/* Timeline vertical connector */
+.report-timeline-line {
+  width: 2px;
+  background: #0f1e36;
+  margin: 0 auto;
+  min-height: 24px;
+}
+.report-timeline-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #0f1e36;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #0f1e36;
+}
+
+/* Checkbox styling for recommendations */
+.report-checkbox {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 1.5px solid #333;
+  margin-right: 8px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
+
+/* Signature lines */
+.report-sig-line {
+  border-bottom: 1px solid #333;
+  min-width: 200px;
+  display: inline-block;
+  height: 30px;
+}
+
+/* Classification band */
+.report-classification-band {
+  background: #0f1e36;
+  color: #fff;
+  text-align: center;
+  font-family: 'Inter', 'Arial', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 5px 0;
+}
+
+/* QR placeholder */
+.report-qr-placeholder {
+  width: 80px;
+  height: 80px;
+  border: 1px solid #999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  color: #999;
+  font-family: 'Inter', sans-serif;
+}
