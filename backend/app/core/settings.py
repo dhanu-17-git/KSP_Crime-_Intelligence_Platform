@@ -21,7 +21,9 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     api_prefix: str = "/api/v1"
-    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:5173"])
+    cors_origins: list[str] = Field(
+        default_factory=lambda: ["http://localhost:5173", "http://127.0.0.1:5173"]
+    )
 
     postgres_host: str = "localhost"
     postgres_port: int = 5432
@@ -39,7 +41,7 @@ class Settings(BaseSettings):
 
     ai_provider: str = "none"
     gemini_api_key: str | None = None
-    gemini_model_name: str = "gemini-1.5-pro"
+    gemini_model_name: str = "gemini-2.5-flash"
 
     @computed_field  # type: ignore[prop-decorator]
     @cached_property

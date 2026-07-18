@@ -130,7 +130,7 @@ class GeminiAIProvider:
 
     def __init__(self, api_key: str | None = None, model_name: str | None = None) -> None:
         self.api_key = api_key
-        self.model_name = model_name or "gemini-1.5-pro"
+        self.model_name = model_name or "gemini-2.5-flash"
 
     async def extract_entities(self, query: InvestigationQuery) -> Sequence[ExtractedEntity]:
         if not self.api_key:
