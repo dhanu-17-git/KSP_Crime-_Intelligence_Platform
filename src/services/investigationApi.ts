@@ -17,7 +17,11 @@ import type { IntelligenceReport } from './mockDb';
 // Config
 // ---------------------------------------------------------------------------
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000/api/v1';
+const API_BASE =
+  import.meta.env.VITE_API_BASE ??
+  (import.meta.env.DEV
+    ? 'http://localhost:8000/api/v1'
+    : 'https://ksp-crime-intel-api-50044310157.development.catalystappsail.in/api/v1');
 
 // ---------------------------------------------------------------------------
 // Backend response types  (mirrors backend/app/investigation/dto.py)
@@ -385,18 +389,7 @@ export async function sendFollowUp(
       }
       reportText = `[DEVELOPER WARNING: Local mock action active]\n\nACTION TAKEN: ${desc}, ${new Date().toISOString()}.`;
     } else {
-      reportText = 
-        `INVESTIGATION QUERY RESPONSE\n\n` +
-        `Query Reference: ${queryText}\n\n` +
-        `FINDINGS\n` +
-        `Based on available records, the query "${queryText}" has been processed against the current investigation context. ` +
-        `Cross-referencing FIR databases, ANPR records, and CDR logs for additional corroborating evidence.\n\n` +
-        `RELATED RECORDS\n` +
-        `• Existing case records and suspect profiles from the primary investigation remain applicable.\n\n` +
-        `AI ASSESSMENT\n` +
-        `The follow-up query is consistent with the ongoing investigation parameters. Further field verification is recommended.\n\n` +
-        `RECOMMENDED ACTION\n` +
-        `Continue evidence collection and coordinate with the assigned investigating officer for updated field reports.`;
+      reportText = `Karnataka State Police Intelligence Assistant online. Processing query: "${queryText}".\n\nPlease enter a suspect name, vehicle registration number, FIR/Crime Number, or specific operational directive to query database records.`;
     }
 
     return {

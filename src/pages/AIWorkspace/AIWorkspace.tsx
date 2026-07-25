@@ -103,7 +103,7 @@ export const AIWorkspace: React.FC = () => {
   const [queryHistory, setQueryHistory] = useState<QueryHistoryEntry[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [recentActions, setRecentActions] = useState<{ desc: string; timestamp: string }[]>([]);
-  const [activeTab, setActiveTab] = useState<'summary' | 'agentic'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'agentic'>('agentic');
 
   // Interactive directive toggles
   const [checkedDirectives, setCheckedDirectives] = useState<Record<number, boolean>>({});
@@ -248,10 +248,11 @@ export const AIWorkspace: React.FC = () => {
     }
   };
 
-  // Trigger when global query state updates
+  // Trigger when global query state updates (e.g. navigated from suspects/vehicles/dashboard)
   useEffect(() => {
     if (aiQuery) {
       setSearchInput(aiQuery);
+      setActiveTab('summary'); // Switch to dossier tab so results are visible
       runAnalysis(aiQuery);
     }
   }, [aiQuery]);
@@ -274,23 +275,51 @@ export const AIWorkspace: React.FC = () => {
 
   const handleFollowUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!followUpInput.trim() || !report || !currentThreadId) return;
+    if (!followUpInput.trim()) return;
 
+    const queryText = followUpInput.trim();
     const userMessage: FollowUpMessage = {
       role: 'officer',
-      content: followUpInput.trim(),
+      content: queryText,
       timestamp: new Date().toLocaleTimeString(),
     };
     setFollowUpMessages(prev => [...prev, userMessage]);
     setFollowUpInput('');
     setIsFollowUpLoading(true);
 
+    let threadIdToUse = currentThreadId;
+
+    // Auto-initialize an investigation thread if none exists yet
+    if (!threadIdToUse) {
+      try {
+        const initResult = await runInvestigation(queryText);
+        threadIdToUse = initResult.threadId || `thread-${Date.now()}`;
+        setCurrentThreadId(threadIdToUse);
+        setReport(initResult.report);
+        setDataSource(initResult.source);
+        setReportText(initResult.reportText);
+
+        const aiMessage: FollowUpMessage = {
+          role: 'ai',
+          content: initResult.reportText || "Investigation initialized. Ready for follow-up directives.",
+          timestamp: new Date().toLocaleTimeString(),
+          type: initResult.type || 'report',
+        };
+        setFollowUpMessages(prev => [...prev, aiMessage]);
+      } catch (err) {
+        addToast("Error starting investigation session", "error");
+      } finally {
+        setIsFollowUpLoading(false);
+      }
+      return;
+    }
+
     const history = [...followUpMessages, userMessage].map(m => ({
       role: m.role,
       content: m.content,
     }));
 
-    const result = await sendFollowUp(userMessage.content, currentThreadId, history);
+    const result = await sendFollowUp(queryText, threadIdToUse, history);
 
     const aiMessage: FollowUpMessage = {
       role: 'ai',
@@ -1232,7 +1261,7 @@ export const AIWorkspace: React.FC = () => {
             </span>
           </div>
 
-          {report && currentThreadId ? (
+          {true ? (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
               
               {/* Left Section: Follow-up Console */}

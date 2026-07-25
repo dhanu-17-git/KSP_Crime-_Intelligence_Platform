@@ -1,4 +1,5 @@
 import json
+import logging
 from collections.abc import Sequence
 from typing import Any
 
@@ -16,49 +17,30 @@ from app.investigation.dto import (
 from app.utils.exceptions import AppError
 
 
+logger = logging.getLogger(__name__)
+
+
 class GeminiProviderNotConfiguredError(AppError):
     status_code = 503
     error_code = "AI_PROVIDER_NOT_CONFIGURED"
 
 
-KSP_INVESTIGATION_SYSTEM_PROMPT = """You are an AI assistant for Karnataka Police investigators.
+KSP_INVESTIGATION_SYSTEM_PROMPT = """You are an AI Police Intelligence Assistant for Karnataka State Police (KSP).
 
-The officer may ask you anything, in casual or natural language, about
-cases, suspects, vehicles, districts, or patterns. Regardless of how
-casually the question is phrased, you must ALWAYS respond strictly in
-formal police investigation report format using the structure below.
+TONE & STYLE:
+- Maintain a formal, professional, clear, and objective tone appropriate for law enforcement officers.
+- Do NOT use casual internet slang, emojis, or conversational filler ("Sure!", "How can I help you today!", "Great question!").
+- Present intelligence findings clearly using markdown paragraphs, bold key terms, and bullet points where helpful.
+- Avoid forcing every response into a rigid static report card template. Format your output naturally to best answer the officer's specific query.
 
-RULES:
-- Never use casual language, emojis, or conversational filler
-  (no "Sure!", "Great question!", "Here's what I found:").
-- Base your findings ONLY on the data provided in the context below.
-  Do not invent facts, names, dates, or figures not present in the data.
-- If the provided data is insufficient to answer, state exactly:
-  "Insufficient records found for this query." under FINDINGS, and stop.
-- Keep AI ASSESSMENT and RECOMMENDED ACTION to 1-2 sentences each.
-
-RESPONSE FORMAT (always use this structure):
-
-INVESTIGATION QUERY RESPONSE
-
-Query Reference: [restate the officer's question formally]
-
-FINDINGS
-[Formal, factual findings based on the retrieved data - bullet points
-or short paragraphs]
-
-RELATED RECORDS
-[Any linked cases, suspects, vehicles, or districts found]
-
-AI ASSESSMENT
-[1-2 sentence formal observation on risk/pattern]
-
-RECOMMENDED ACTION
-[1 formal sentence]
-
-- If confirming that an action has been successfully taken (e.g. following a function call/tool execution), you MUST respond ONLY in the following exact format:
-  ACTION TAKEN: [one-line description of what happened], [timestamp].
-  Do not include any other sections (no FINDINGS, no AI ASSESSMENT, no RECOMMENDED ACTION).
+DATA INTEGRITY & RULES:
+- Base all investigative findings ONLY on the evidence provided in the DATA CONTEXT. Do not invent unverified facts, names, dates, or figures.
+- Never reference internal technology stack details (database names, ORM layers, backend frameworks, environment variables) — report only investigative facts.
+- Explicitly highlight any cross-jurisdictional or cross-district patterns if a suspect or vehicle appears across multiple police stations or districts.
+- If no records exist for a specific query, clearly state: "No matching records found in the KSP database for this query."
+- OPERATIONAL ACTIONS: If the officer explicitly commands an operational action (such as notifying a police station, flagging a suspect, or adding a case note), you MUST issue the appropriate function call (notify_station, flag_suspect, or add_case_note).
+- When confirming an operational action executed by a tool, respond ONLY in this exact format:
+  ACTION TAKEN: [one-line description of what action was taken], [timestamp].
 """
 
 
@@ -130,7 +112,7 @@ class GeminiAIProvider:
 
     def __init__(self, api_key: str | None = None, model_name: str | None = None) -> None:
         self.api_key = api_key
-        self.model_name = model_name or "gemini-2.5-flash"
+        self.model_name = model_name or "gemini-flash-latest"
 
     async def extract_entities(self, query: InvestigationQuery) -> Sequence[ExtractedEntity]:
         if not self.api_key:
@@ -336,6 +318,19 @@ class GeminiAIProvider:
         }
         if tools:
             payload["tools"] = tools
+            function_names: list[str] = []
+            for tool in tools:
+                for declaration in tool.get("functionDeclarations", []):
+                    name = declaration.get("name")
+                    if name:
+                        function_names.append(name)
+            if function_names:
+                payload["toolConfig"] = {
+                    "functionCallingConfig": {
+                        "mode": "ANY",
+                        "allowedFunctionNames": function_names,
+                    }
+                }
 
         async with httpx.AsyncClient(timeout=30.0) as client:
             try:
@@ -345,12 +340,55 @@ class GeminiAIProvider:
                 candidate = data["candidates"][0]
                 content = candidate.get("content", {})
                 parts = content.get("parts", [])
-                if parts:
-                    part = parts[0]
-                    if "functionCall" in part:
-                        return part["functionCall"]
-                    elif "text" in part:
-                        return part["text"]
+                part_summaries: list[dict[str, Any]] = []
+                first_text: str | None = None
+                for index, part in enumerate(parts):
+                    function_call = part.get("functionCall") or part.get("function_call")
+                    part_summaries.append(
+                        {
+                            "index": index,
+                            "keys": sorted(part.keys()),
+                            "has_function_call": function_call is not None,
+                            "has_text": "text" in part,
+                        }
+                    )
+                    if function_call is not None:
+                        logger.info(
+                            "Gemini raw response included function call",
+                            extra={
+                                "details": {
+                                    "query_text": query_text,
+                                    "parts": part_summaries,
+                                    "function_call": function_call,
+                                    "finish_reason": candidate.get("finishReason"),
+                                }
+                            },
+                        )
+                        return function_call
+                    if first_text is None and "text" in part:
+                        first_text = part["text"]
+                if first_text is not None:
+                    logger.info(
+                        "Gemini raw response returned text",
+                        extra={
+                            "details": {
+                                "query_text": query_text,
+                                "parts": part_summaries,
+                                "finish_reason": candidate.get("finishReason"),
+                            }
+                        },
+                    )
+                    return first_text
+                logger.info(
+                    "Gemini raw response had no usable parts",
+                    extra={
+                        "details": {
+                            "query_text": query_text,
+                            "parts": part_summaries,
+                            "finish_reason": candidate.get("finishReason"),
+                        }
+                    },
+                )
                 return ""
             except Exception as e:
                 raise AppError(f"Failed to generate formal report from Gemini API: {str(e)}") from e

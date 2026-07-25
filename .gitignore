@@ -36,3 +36,21 @@ __pycache__/
 *.db
 *.sqlite
 *.sqlite3
+
+# Backend logs
+backend/*.log
+backend/*.err.log
+backend/*.out.log
+
+# Zoho Catalyst
+.catalyst/
+.catalystrc.bak
+backend/app-config.json
+
+# Coverage reports
+coverage.xml
+.coverage
+htmlcov/
+
+# Test cache
+.pytest_cache/

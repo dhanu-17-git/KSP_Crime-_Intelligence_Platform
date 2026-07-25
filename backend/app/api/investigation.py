@@ -34,8 +34,11 @@ from app.investigation.retrieval import PostgreSQLRetrievalProvider
 from app.models.fir import Accused, CaseMaster
 from app.schemas.user import CurrentUser
 
+import logging
+
 router = APIRouter(prefix="/investigation", tags=["investigation"])
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 # ── In-memory thread store ──────────────────────────────────────────────────
@@ -121,7 +124,7 @@ def _get_extractor(db: AsyncSession):
             api_key=settings.gemini_api_key,
             model_name=settings.gemini_model_name,
         )
-        return ProviderEntityExtractor(ai_provider)
+        return ProviderEntityExtractor(ai_provider, fallback_extractor=LocalRegexEntityExtractor(db))
     return LocalRegexEntityExtractor(db)
 
 
@@ -224,6 +227,7 @@ async def execute_notify_station(
     )
     db.add(notification)
     await db.flush()
+    await db.commit()
     return {"success": True, "timestamp": datetime.now(UTC).isoformat() + "Z"}
 
 
@@ -244,6 +248,7 @@ async def execute_flag_suspect(
     accused.flag_reason = reason
     db.add(accused)
     await db.flush()
+    await db.commit()
     return {
         "success": True,
         "suspect_name": accused.accused_name,
@@ -272,6 +277,7 @@ async def execute_add_case_note(
     )
     db.add(case_note)
     await db.flush()
+    await db.commit()
     return {"success": True, "timestamp": datetime.now(UTC).isoformat() + "Z"}
 
 
@@ -297,28 +303,11 @@ async def query_investigation(
     thread_id = query.thread_id
     existing_thread = _thread_store.get(thread_id) if thread_id else None
 
-    # ── SESSION EXPIRED / UNKNOWN THREAD PATH ───────────────────────────
+    # If thread_id is provided but not found in server store (e.g. server restart),
+    # treat it seamlessly as a fresh query instead of throwing a session expired error.
     if thread_id and existing_thread is None:
-        return InvestigationResponse(
-            thread_id="",
-            is_follow_up=True,
-            status="insufficient_data",
-            query=query,
-            entities=[],
-            evidence=[],
-            timeline=[],
-            risk=RiskAssessment(score=0, level=RiskLevel.LOW, factors=[]),
-            recommendations=[],
-            report_text=(
-                "INVESTIGATION QUERY RESPONSE\n\n"
-                f"Query Reference: {query.query_text}\n\n"
-                "FINDINGS\n"
-                "Session expired. The active thread context is no longer available on the server (due to a backend restart or connection timeout).\n\n"
-                "RECOMMENDED ACTION\n"
-                "Please perform a new search query from the main search bar to initialize a fresh active investigation thread."
-            ),
-            metadata={"error": "session_expired"},
-        )
+        logger.info("Thread ID %s not found in store; auto-upgrading to fresh query", thread_id)
+        query.thread_id = None
 
     # ── FOLLOW-UP PATH ──────────────────────────────────────────────────
     if existing_thread is not None:
@@ -351,6 +340,7 @@ async def query_investigation(
 
         action_call = None
         is_mock_action = False
+        report_text = ""
 
         # Helper to parse local actions (fallback / bypass)
         def parse_local_mock_action(q_text: str) -> dict[str, Any] | None:
@@ -430,7 +420,22 @@ async def query_investigation(
                     is_mock_action = True
                     logger.warning("Local Mock Action Interceptor Triggered (Gemini failed) for query: %s. Error: %s", query.query_text, str(e))
                 else:
-                    raise e
+                    logger.warning(
+                        "Gemini follow-up generation failed; using deterministic fallback report",
+                        extra={
+                            "details": {
+                                "query_text": query.query_text,
+                                "error": str(e),
+                            }
+                        },
+                    )
+
+        if action_call is None:
+            mock_action = parse_local_mock_action(query.query_text)
+            if mock_action:
+                action_call = mock_action
+                is_mock_action = True
+                logger.warning("Local Mock Action Interceptor Triggered (Gemini returned text/no tool call) for query: %s", query.query_text)
 
         response_type = "report"
         if action_call:
@@ -463,69 +468,23 @@ async def query_investigation(
 
             if action_result.get("success", False):
                 response_type = "action"
-                if provider is not None and not is_mock_action:
-                    try:
-                        # Construct multi-turn contents for the second confirmation call
-                        first_user_text = (
-                            f"{KSP_INVESTIGATION_SYSTEM_PROMPT}\n"
-                            f"---\n"
-                            f"DATA CONTEXT:\n{_build_context_json(existing_thread)}\n"
-                            f"---\n"
-                            f"OFFICER QUERY:\n{existing_thread.conversation_history[0].get('content', '')}"
-                        )
-                        raw_contents = [
-                            {
-                                "role": "user",
-                                "parts": [{"text": first_user_text}]
-                            }
-                        ]
-                        for entry in existing_thread.conversation_history[1:-1]:
-                            role = "user" if entry.get("role") == "officer" else "model"
-                            raw_contents.append({
-                                "role": role,
-                                "parts": [{"text": entry.get("content", "")}]
-                            })
-                        raw_contents.append({
-                            "role": "model",
-                            "parts": [{"functionCall": action_call}]
-                        })
-                        raw_contents.append({
-                            "role": "function",
-                            "parts": [
-                                {
-                                    "functionResponse": {
-                                        "name": action_name,
-                                        "response": {
-                                            "output": action_result
-                                        }
-                                    }
-                                }
-                            ]
-                        })
-                        report_text = await provider.generate_formal_report(
-                            query_text="",
-                            context_data="",
-                            conversation_history=[],
-                            raw_contents=raw_contents,
-                        )
-                    except Exception as e:
-                        report_text = f"ACTION TAKEN: Executed {action_name} successfully, {action_result.get('timestamp')}."
+                if action_name == "notify_station":
+                    desc = f"Notified {args.get('station_name')} regarding suspect alert"
+                elif action_name == "flag_suspect":
+                    desc = f"Flagged suspect ID {args.get('suspect_id')} ({action_result.get('suspect_name', 'Unknown')}) as active threat"
                 else:
-                    if action_name == "notify_station":
-                        desc = f"Notified {args.get('station_name')} PS regarding suspect alert"
-                    elif action_name == "flag_suspect":
-                        desc = f"Flagged suspect ID {args.get('suspect_id')} ({action_result.get('suspect_name', 'Unknown')}) as active threat"
-                    else:
-                        desc = f"Added official case note to Case ID {args.get('case_id')}"
-                    report_text = f"ACTION TAKEN: {desc}, {action_result.get('timestamp')}."
-                    if is_mock_action:
-                        report_text = f"[DEVELOPER WARNING: Local mock action active]\n\n" + report_text
+                    desc = f"Added official case note to Case ID {args.get('case_id')}"
+                report_text = f"ACTION TAKEN: {desc}, {action_result.get('timestamp')}."
+                if is_mock_action:
+                    report_text = f"[DEVELOPER WARNING: Local mock action active]\n\n" + report_text
             else:
                 response_type = "report"
                 reason = action_result.get("reason", "Unknown error")
                 report_text = f"ACTION FAILED: Could not execute {action_name}. Reason: {reason}"
         else:
-            if provider is None:
+            # If Gemini returned no usable report_text (empty or only whitespace),
+            # fall back to deterministic followup report generation.
+            if not report_text or not report_text.strip():
                 report_text = await _generate_followup_report(
                     query_text=query.query_text,
                     thread=existing_thread,
@@ -574,26 +533,9 @@ async def query_investigation(
     )
 
     # Generate formal report text for the initial query
-    report_text = ""
-    if result.evidence:
-        report_text = await _generate_initial_report(query.query_text, thread)
-        thread.conversation_history.append({"role": "officer", "content": query.query_text})
-        thread.conversation_history.append({"role": "ai", "content": report_text})
-    else:
-        report_text = (
-            "INVESTIGATION QUERY RESPONSE\n\n"
-            f"Query Reference: {query.query_text}\n\n"
-            "FINDINGS\n"
-            "Insufficient records found for this query.\n\n"
-            "RELATED RECORDS\n"
-            "No matching records found in FIR database, ANPR registry, CDR logs, "
-            "or biometric match databases for the specified search parameters.\n\n"
-            "AI ASSESSMENT\n"
-            "The query did not return actionable intelligence from available data sources.\n\n"
-            "RECOMMENDED ACTION\n"
-            "Verify the search parameters and retry with corrected suspect names, "
-            "vehicle registration numbers, or case reference numbers."
-        )
+    report_text = await _generate_initial_report(query.query_text, thread)
+    thread.conversation_history.append({"role": "officer", "content": query.query_text})
+    thread.conversation_history.append({"role": "ai", "content": report_text})
 
     _thread_store[new_thread_id] = thread
 
@@ -613,31 +555,36 @@ async def _generate_initial_report(query_text: str, thread: ThreadContext) -> st
     provider = _get_gemini_provider()
     if provider:
         try:
-            return await provider.generate_formal_report(
+            res = await provider.generate_formal_report(
                 query_text=query_text,
                 context_data=_build_context_json(thread),
                 conversation_history=[],
             )
-        except Exception:
-            pass  # Fall through to deterministic fallback
+            if isinstance(res, str):
+                return res
+            elif isinstance(res, dict) and "name" in res:
+                action_name = res.get("name", "action")
+                args = res.get("args", {})
+                return f"ACTION INITIATED: Executed {action_name} directive ({json.dumps(args)}) for query: '{query_text}'."
+        except Exception as e:
+            logger.warning("Gemini initial report generation failed: %s", str(e))
 
-    # Deterministic fallback
-    evidence_lines = "\n".join(
-        f"• {ev.title}: {ev.summary[:120]}"
-        for ev in thread.evidence_context[:5]
-    )
+    # Deterministic fallback when provider unavailable/failed
+    if thread.evidence_context:
+        evidence_lines = "\n".join(
+            f"• {ev.title}: {ev.summary[:120]}"
+            for ev in thread.evidence_context[:5]
+        )
+        return (
+            f"**KSP INTELLIGENCE DOSSIER SUMMARY**\n\n"
+            f"**Query:** {query_text}\n\n"
+            f"**Retrieved Evidence Highlights:**\n{evidence_lines}\n\n"
+            f"**Status:** {len(thread.evidence_context)} matching evidence items identified across KSP databases. "
+            f"Further field verification is recommended."
+        )
     return (
-        "INVESTIGATION QUERY RESPONSE\n\n"
-        f"Query Reference: {query_text}\n\n"
-        "FINDINGS\n"
-        f"{evidence_lines or 'No specific findings generated.'}\n\n"
-        "RELATED RECORDS\n"
-        f"• {len(thread.evidence_context)} evidence items retrieved from KSP databases.\n\n"
-        "AI ASSESSMENT\n"
-        "Records have been retrieved and cross-referenced. Further analysis may reveal "
-        "additional investigative leads.\n\n"
-        "RECOMMENDED ACTION\n"
-        "Review the compiled dossier and initiate field verification for key findings."
+        f"No matching records found in the KSP crime intelligence database for query: '{query_text}'.\n\n"
+        f"Please verify search parameters (e.g. suspect name, vehicle registration number, or FIR case number)."
     )
 
 
@@ -646,31 +593,30 @@ async def _generate_followup_report(query_text: str, thread: ThreadContext) -> s
     provider = _get_gemini_provider()
     if provider:
         try:
-            return await provider.generate_formal_report(
+            res = await provider.generate_formal_report(
                 query_text=query_text,
                 context_data=_build_context_json(thread),
                 conversation_history=thread.conversation_history,
             )
-        except Exception:
-            pass
+            if isinstance(res, str):
+                return res
+            elif isinstance(res, dict) and "name" in res:
+                action_name = res.get("name", "action")
+                args = res.get("args", {})
+                return f"ACTION INITIATED: Executed {action_name} directive ({json.dumps(args)}) for query: '{query_text}'."
+        except Exception as e:
+            logger.warning("Gemini follow-up report generation failed: %s", str(e))
 
-    # Deterministic fallback
+    # Deterministic fallback when provider unavailable/failed
+    if thread.evidence_context:
+        return (
+            f"**INVESTIGATION THREAD UPDATE**\n\n"
+            f"**Follow-up Query:** {query_text}\n\n"
+            f"Cross-referenced against {len(thread.evidence_context)} evidence items in active thread context. "
+            f"Findings remain consistent with ongoing investigation parameters."
+        )
     return (
-        "INVESTIGATION QUERY RESPONSE\n\n"
-        f"Query Reference: {query_text}\n\n"
-        "FINDINGS\n"
-        f"The follow-up query \"{query_text}\" has been processed against "
-        f"{len(thread.evidence_context)} existing evidence items in this investigation thread.\n"
-        "• Records consistent with the primary investigation have been identified.\n"
-        "• No contradictory evidence found in currently available datasets.\n\n"
-        "RELATED RECORDS\n"
-        "• Existing case records and suspect profiles from the primary investigation remain applicable.\n\n"
-        "AI ASSESSMENT\n"
-        "The follow-up query is consistent with the ongoing investigation parameters. "
-        "Further field verification and witness corroboration are recommended.\n\n"
-        "RECOMMENDED ACTION\n"
-        "Continue evidence collection and coordinate with the assigned investigating officer "
-        "for updated field reports."
+        f"No additional matching records found for follow-up query: '{query_text}'."
     )
 
 

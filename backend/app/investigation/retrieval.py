@@ -14,7 +14,16 @@ from app.investigation.dto import (
     InvestigationQuery,
     RetrievalResult,
 )
-from app.models.fir import Accused, CaseMaster, ComplainantDetails
+from app.models.fir import (
+    Accused,
+    ActSectionAssociation,
+    AssociationEdge,
+    CaseMaster,
+    ComplainantDetails,
+    District,
+    FinancialTransaction,
+    Unit,
+)
 from app.utils.phonetic import phonetic_hash
 
 
@@ -62,7 +71,7 @@ class PostgreSQLRetrievalProvider:
             if evidence_candidates:
                 results.append(
                     RetrievalResult(
-                        source_name="postgres-ksp",
+                        source_name="KSP Database",
                         evidence=evidence_candidates,
                         metadata={"entity_value": entity.value, "entity_type": entity.entity_type},
                     )
@@ -93,7 +102,7 @@ class PostgreSQLRetrievalProvider:
                     title=f"FIR {case.crime_no or case.case_no or case.case_master_id}",
                     summary=case.brief_facts or "No details available",
                     occurred_at=occurred_dt,
-                    source="postgres-ksp",
+                    source="KSP Database",
                     confidence=0.95,
                     relevance_score=0.9,
                     risk_weight=0.8 if case.gravity_offence_id == 1 else 0.5,
@@ -114,21 +123,42 @@ class PostgreSQLRetrievalProvider:
             return candidates
 
         # Query all Accused records (for datathon scale we load and match phonetically in Python)
-        # In larger production datasets, precomputed phonetic columns are used
-        stmt = select(Accused).options(selectinload(Accused.case))
+        stmt = select(Accused).options(
+            selectinload(Accused.case)
+            .selectinload(CaseMaster.police_station)
+            .selectinload(Unit.district)
+        )
         result = await self.session.execute(stmt)
         all_accused = result.scalars().all()
 
+        matched_accused_ids: list[int] = []
+
         for acc in all_accused:
             if phonetic_hash(acc.accused_name) == target_hash:
+                matched_accused_ids.append(acc.accused_master_id)
+                station_name = (
+                    acc.case.police_station.unit_name
+                    if acc.case and acc.case.police_station
+                    else None
+                )
+                district_name = (
+                    acc.case.police_station.district.district_name
+                    if acc.case and acc.case.police_station and acc.case.police_station.district
+                    else None
+                )
+                loc_str = (
+                    f" ({station_name}, {district_name})"
+                    if station_name and district_name
+                    else (f" ({station_name})" if station_name else "")
+                )
                 candidates.append(
                     EvidenceCandidate(
                         id=f"suspect-{acc.accused_master_id}",
                         evidence_type=EvidenceType.SUSPECT,
                         title=f"Accused: {acc.accused_name}",
-                        summary=f"Accused in Case ID: {acc.case_master_id}. Person ID: {acc.person_id or 'N/A'}, Age: {acc.age_year or 'N/A'}",
+                        summary=f"Accused in Case ID: {acc.case_master_id}{loc_str}. Person ID: {acc.person_id or 'N/A'}, Age: {acc.age_year or 'N/A'}",
                         occurred_at=None,
-                        source="postgres-ksp",
+                        source="KSP Database",
                         confidence=1.0,
                         relevance_score=1.0,
                         risk_weight=0.9,
@@ -136,9 +166,16 @@ class PostgreSQLRetrievalProvider:
                             "name": acc.accused_name,
                             "person_id": acc.person_id,
                             "case_master_id": acc.case_master_id,
+                            "police_station": station_name,
+                            "district": district_name,
                         },
                     )
                 )
+
+        # Retrieve associated financial transactions and network edges for matched accused
+        if matched_accused_ids:
+            fin_assoc = await self._retrieve_financial_and_associations(matched_accused_ids)
+            candidates.extend(fin_assoc)
 
         # Also search complainants
         stmt_comp = select(ComplainantDetails).options(selectinload(ComplainantDetails.case))
@@ -154,7 +191,7 @@ class PostgreSQLRetrievalProvider:
                         title=f"Complainant: {comp.complainant_name}",
                         summary=f"Complainant in Case ID: {comp.case_master_id}. Age: {comp.age_year or 'N/A'}",
                         occurred_at=None,
-                        source="postgres-ksp",
+                        source="KSP Database",
                         confidence=0.85,
                         relevance_score=0.7,
                         risk_weight=0.3,
@@ -164,6 +201,88 @@ class PostgreSQLRetrievalProvider:
                         },
                     )
                 )
+
+        return candidates
+
+    async def _retrieve_financial_and_associations(self, accused_ids: list[int]) -> list[EvidenceCandidate]:
+        candidates: list[EvidenceCandidate] = []
+        if not accused_ids:
+            return candidates
+
+        # 1. FinancialTransaction records
+        stmt_fin = (
+            select(FinancialTransaction)
+            .where(
+                (FinancialTransaction.from_accused_id.in_(accused_ids)) |
+                (FinancialTransaction.to_accused_id.in_(accused_ids))
+            )
+            .options(
+                selectinload(FinancialTransaction.from_accused),
+                selectinload(FinancialTransaction.to_accused),
+            )
+        )
+        res_fin = await self.session.execute(stmt_fin)
+        fin_txs = res_fin.scalars().all()
+
+        for tx in fin_txs:
+            from_name = tx.from_accused.accused_name if tx.from_accused else f"Accused #{tx.from_accused_id}"
+            to_name = tx.to_accused.accused_name if tx.to_accused else f"Accused #{tx.to_accused_id}"
+            amt_str = f"Rs {float(tx.amount):,.2f}" if tx.amount else "N/A"
+            tx_date_str = tx.transaction_date.strftime("%Y-%m-%d") if tx.transaction_date else "N/A"
+            
+            candidates.append(
+                EvidenceCandidate(
+                    id=f"fintx-{tx.financial_transaction_id}",
+                    evidence_type=EvidenceType.REPORT,
+                    title=f"Financial Transaction: {from_name} -> {to_name}",
+                    summary=f"Fund transfer of {amt_str} from {from_name} to {to_name} on {tx_date_str}. Money flow link between co-accused.",
+                    occurred_at=self._normalize_datetime(tx.transaction_date),
+                    source="KSP Database",
+                    confidence=1.0,
+                    relevance_score=1.0,
+                    risk_weight=0.85,
+                    metadata={
+                        "from_accused": from_name,
+                        "to_accused": to_name,
+                        "amount": float(tx.amount) if tx.amount else 0,
+                        "transaction_date": tx_date_str,
+                    },
+                )
+            )
+
+        # 2. AssociationEdge records
+        acc_id_strs = [str(aid) for aid in accused_ids]
+        stmt_assoc = (
+            select(AssociationEdge)
+            .where(
+                (AssociationEdge.source_entity_id.in_(acc_id_strs)) |
+                (AssociationEdge.target_entity_id.in_(acc_id_strs))
+            )
+            .options(selectinload(AssociationEdge.relationship_type))
+        )
+        res_assoc = await self.session.execute(stmt_assoc)
+        assoc_edges = res_assoc.scalars().all()
+
+        for edge in assoc_edges:
+            rel_name = edge.relationship_type.relationship_type_name if edge.relationship_type else "Association"
+            candidates.append(
+                EvidenceCandidate(
+                    id=f"assoc-{edge.association_edge_id}",
+                    evidence_type=EvidenceType.REPORT,
+                    title=f"Association Edge ({rel_name})",
+                    summary=f"Network link ({rel_name}): {edge.evidence or 'Linked entities in criminal network graph'}",
+                    occurred_at=None,
+                    source="KSP Database",
+                    confidence=0.95,
+                    relevance_score=0.9,
+                    risk_weight=0.8,
+                    metadata={
+                        "source_entity_id": edge.source_entity_id,
+                        "target_entity_id": edge.target_entity_id,
+                        "relationship_type": rel_name,
+                    },
+                )
+            )
 
         return candidates
 
@@ -192,7 +311,7 @@ class PostgreSQLRetrievalProvider:
                     title=f"FIR {case.crime_no or case.case_no or case.case_master_id}",
                     summary=case.brief_facts or "No details available",
                     occurred_at=occurred_dt,
-                    source="postgres-ksp",
+                    source="KSP Database",
                     confidence=1.0,
                     relevance_score=1.0,
                     risk_weight=0.7,
@@ -228,7 +347,7 @@ class PostgreSQLRetrievalProvider:
                     title=f"FIR {case.crime_no or case.case_no or case.case_master_id}",
                     summary=case.brief_facts or "No details available",
                     occurred_at=occurred_dt,
-                    source="postgres-ksp",
+                    source="KSP Database",
                     confidence=0.8,
                     relevance_score=0.6,
                     risk_weight=0.5,

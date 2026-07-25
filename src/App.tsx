@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import { AuthGuard } from './components/AuthGuard';
 import { Login } from './pages/Login/Login';
@@ -20,7 +20,7 @@ import './App.css';
 function App() {
   return (
     <AppProvider>
-      <BrowserRouter>
+      <HashRouter>
         <Routes>
           {/* Public Authentication Gate */}
           <Route path="/login" element={<Login />} />
@@ -45,7 +45,7 @@ function App() {
             </Route>
           </Route>
         </Routes>
-      </BrowserRouter>
+      </HashRouter>
     </AppProvider>
   );
 }

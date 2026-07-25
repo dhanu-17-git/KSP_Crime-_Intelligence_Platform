@@ -41,15 +41,28 @@ class Settings(BaseSettings):
 
     ai_provider: str = "none"
     gemini_api_key: str | None = None
-    gemini_model_name: str = "gemini-2.5-flash"
+    gemini_model_name: str = "gemini-flash-latest"
 
     @computed_field  # type: ignore[prop-decorator]
     @cached_property
     def database_url(self) -> str:
-        import os
+        import os, urllib.parse
         env_url = os.environ.get("DATABASE_URL")
         if env_url:
-            return env_url
+            url = env_url
+            if url.startswith("postgresql://"):
+                url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            parsed = urllib.parse.urlparse(url)
+            query_params = urllib.parse.parse_qs(parsed.query)
+            # Retain only valid asyncpg query params
+            filtered_params = {}
+            if "sslmode" in query_params or "ssl" in query_params:
+                filtered_params["ssl"] = "require"
+            new_query = urllib.parse.urlencode(filtered_params)
+            sanitized = urllib.parse.urlunparse((
+                parsed.scheme, parsed.netloc, parsed.path, parsed.params, new_query, parsed.fragment
+            ))
+            return sanitized
 
         import socket
         try:

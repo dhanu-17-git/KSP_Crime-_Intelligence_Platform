@@ -1240,7 +1240,7 @@ async def seed_database() -> None:
 
 
 async def _seed_handcrafted_demo_cases() -> None:
-    """Seed 5 deterministic demo cases (Cases 2–6) with named entities.
+    """Seed 6 deterministic demo cases (Cases 1–6) with named entities.
 
     Uses ID range 90000+ to avoid collision with procedural data.
     Uses the extended KSP schema: Vehicle, ANPRSighting, CDRRecord,
@@ -1316,8 +1316,172 @@ async def _seed_handcrafted_demo_cases() -> None:
                                    latitude=Decimal("15.3647"), longitude=Decimal("75.1240"), district_id=5),
                     CellTowerModel(cell_tower_id=6, tower_code="TWR-BLR-EC01",
                                    latitude=Decimal("12.8399"), longitude=Decimal("77.6770"), district_id=1),
+                    CellTowerModel(cell_tower_id=7, tower_code="TWR-BLR-SB01",
+                                   latitude=Decimal("12.9177"), longitude=Decimal("77.6238"), district_id=1),
                 ])
                 await session.flush()
+
+            # ═══════════════════════════════════════════════════════
+            # CASE 1 — Vikram Hegde Syndicate Lead
+            # Absconding suspect linked to armed robbery, vehicle ANPR,
+            # and CDR contacts with financier/logistics associates.
+            # ═══════════════════════════════════════════════════════
+
+            session.add(CaseModel(
+                case_master_id=90100,
+                crime_no="010302026014200000",
+                case_no="010300142",
+                crime_registered_date=date(2026, 7, 6),
+                police_person_id=1021,  # Koramangala PS officer
+                police_station_id=103,
+                case_category_id=1,
+                gravity_offence_id=1,
+                crime_major_head_id=2,   # Robbery
+                crime_minor_head_id=3,   # Armed robbery
+                case_status_id=1,        # Under Investigation
+                court_id=3,
+                incident_from_date=datetime(2026, 7, 6, 16, 45),
+                incident_to_date=datetime(2026, 7, 6, 18, 10),
+                info_received_ps_date=datetime(2026, 7, 6, 18, 35),
+                latitude=Decimal("12.9279"),
+                longitude=Decimal("77.6271"),
+                brief_facts=(
+                    "Highway hijack and armed robbery linked to absconding suspect Vikram Hegde. "
+                    "ANPR sightings place white Mahindra Scorpio KA05MJ4421 near Koramangala 80 Feet Road. "
+                    "CDR analysis links Vikram Hegde with Suresh Gowda and Kiran Kumar before the consignment drop."
+                ),
+            ))
+
+            session.add(AccusedModel(
+                accused_master_id=90100,
+                case_master_id=90100,
+                accused_name="Vikram Hegde",
+                age_year=38,
+                gender_id=1,
+                person_id="DEMO-VIKRAM-001",
+                flagged=True,
+                flag_reason="Absconding syndicate leader linked to highway hijack and armed robbery",
+            ))
+            session.add(AccusedModel(
+                accused_master_id=90101,
+                case_master_id=90100,
+                accused_name="Suresh Gowda",
+                age_year=42,
+                gender_id=1,
+                person_id="DEMO-SURESH-001",
+                flagged=True,
+                flag_reason="Financier and call contact of Vikram Hegde",
+            ))
+            session.add(AccusedModel(
+                accused_master_id=90102,
+                case_master_id=90100,
+                accused_name="Kiran Kumar",
+                age_year=34,
+                gender_id=1,
+                person_id="DEMO-KIRAN-001",
+            ))
+
+            session.add(VictimModel(
+                victim_master_id=90100,
+                case_master_id=90100,
+                victim_name="Rajesh Kumar",
+                age_year=45,
+                gender_id=1,
+                victim_police="0",
+            ))
+
+            session.add(CompModel(
+                complainant_id=90100,
+                case_master_id=90100,
+                complainant_name="Rajesh Kumar",
+                age_year=45,
+                occupation_id=2,
+                religion_id=1,
+                caste_id=1,
+                gender_id=1,
+            ))
+
+            session.add(ActSectionModel(
+                case_master_id=90100, act_id="IPC", section_id="IPC392",
+                act_order_id=1, section_order_id=1,
+            ))
+            session.add(ActSectionModel(
+                case_master_id=90100, act_id="IPC", section_id="IPC506",
+                act_order_id=2, section_order_id=2,
+            ))
+
+            session.add(FIRVehicleModel(
+                vehicle_id=90100,
+                registration_number="KA05MJ4421",
+                owner_accused_id=90100,
+                active=True,
+            ))
+
+            session.add(ANPRSightModel(
+                anpr_sighting_id=90100,
+                vehicle_id=90100,
+                camera_location="Koramangala 80 Feet Road Cam-01",
+                sighting_date_time=datetime(2026, 7, 6, 17, 5),
+                latitude=Decimal("12.9279"),
+                longitude=Decimal("77.6271"),
+            ))
+            session.add(ANPRSightModel(
+                anpr_sighting_id=90101,
+                vehicle_id=90100,
+                camera_location="Silk Board Junction ANPR",
+                sighting_date_time=datetime(2026, 7, 6, 17, 45),
+                latitude=Decimal("12.9177"),
+                longitude=Decimal("77.6238"),
+            ))
+
+            session.add(CDRRecModel(
+                cdr_record_id=90100,
+                accused_master_id=90100,
+                cell_tower_id=2,
+                call_date_time=datetime(2026, 7, 6, 17, 10),
+                duration_seconds=240,
+                connected_accused_id=90101,
+            ))
+            session.add(CDRRecModel(
+                cdr_record_id=90101,
+                accused_master_id=90100,
+                cell_tower_id=7,
+                call_date_time=datetime(2026, 7, 6, 17, 45),
+                duration_seconds=98,
+                connected_accused_id=90102,
+            ))
+
+            session.add(BioModel(
+                biometric_match_id=90100,
+                accused_master_id=90100,
+                location_name="Koramangala 80 Feet Road Cam-01",
+                match_date_time=datetime(2026, 7, 6, 17, 7),
+                match_type="facial_recognition",
+                confidence_score=Decimal("0.91"),
+            ))
+
+            session.add(AssocEdgeModel(
+                association_edge_id=90100,
+                source_entity_type="Accused",
+                source_entity_id=str(90100),
+                target_entity_type="Accused",
+                target_entity_id=str(90101),
+                relationship_type_id=3,
+                evidence="CDR call: Vikram Hegde to Suresh Gowda for 240 seconds before consignment drop",
+                duration_seconds=240,
+            ))
+            session.add(AssocEdgeModel(
+                association_edge_id=90101,
+                source_entity_type="Accused",
+                source_entity_id=str(90100),
+                target_entity_type="Accused",
+                target_entity_id=str(90102),
+                relationship_type_id=3,
+                evidence="CDR call: Vikram Hegde to Kiran Kumar near Silk Board sector",
+                duration_seconds=98,
+            ))
+
+            await session.flush()
 
             # ═══════════════════════════════════════════════════════
             # CASE 2 — Cross-District Repeat Suspect
@@ -2138,7 +2302,8 @@ async def _seed_handcrafted_demo_cases() -> None:
 
             await session.flush()
 
-    print("✓ Seeded 5 handcrafted demo cases (Cases 2–6)")
+    print("✓ Seeded 6 handcrafted demo cases (Cases 1–6)")
+    print("  Case 1: Vikram Hegde — syndicate lead with vehicle/CDR links")
     print("  Case 2: Sunil Jadhav — cross-district repeat (Bengaluru + Mysuru)")
     print("  Case 3: Unknown suspect — weak/circumstantial evidence")
     print("  Case 4: Deepak Kulkarni / Meena Patil / Nagesh Rao — financial crime")

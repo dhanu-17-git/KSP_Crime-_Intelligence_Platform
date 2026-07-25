@@ -1,0 +1,133 @@
+name: CI — Test & Build
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────
+  # JOB 1 — Backend: Lint, Type-check, Unit Tests
+  # ─────────────────────────────────────────────────────────────────────
+  backend-tests:
+    name: Backend — Python Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    env:
+      ENVIRONMENT: test
+      DATABASE_URL: sqlite+aiosqlite:///./test.db
+      JWT_SECRET_KEY: ci-test-secret-key-not-for-production
+      JWT_ALGORITHM: HS256
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: 60
+      AI_PROVIDER: none
+      GEMINI_API_KEY: ""
+      GEMINI_MODEL_NAME: gemini-1.5-pro
+      CORS_ORIGINS: '["http://localhost:5173"]'
+      APP_NAME: KSP Crime Intelligence API
+      APP_VERSION: 0.1.0
+      LOG_LEVEL: WARNING
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests with coverage
+        run: |
+          pip install pytest-cov
+          pytest tests/ -v --tb=short \
+            --cov=app \
+            --cov-report=term-missing \
+            --cov-report=xml:coverage.xml \
+            --cov-fail-under=30
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-coverage
+          path: backend/coverage.xml
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────────
+  # JOB 2 — Frontend: Lint, Type-check, Production Build
+  # ─────────────────────────────────────────────────────────────────────
+  frontend-build:
+    name: Frontend — Build & Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint (oxlint)
+        run: npm run lint
+
+      - name: TypeScript type-check + Production build
+        run: npm run build
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────────
+  # JOB 3 — Docker Build (Backend image smoke test — no push)
+  # ─────────────────────────────────────────────────────────────────────
+  docker-smoke-test:
+    name: Docker — Backend Image Build
+    runs-on: ubuntu-latest
+    needs: backend-tests
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --file backend/Dockerfile \
+            --tag ksp-crime-intel-api:ci-${{ github.sha }} \
+            backend/
+
+      - name: Smoke test — container starts
+        run: |
+          docker run --rm -d \
+            --name ksp-api-smoke \
+            -p 8000:8000 \
+            -e DATABASE_URL="sqlite+aiosqlite:///./smoke.db" \
+            -e JWT_SECRET_KEY="smoke-test-secret" \
+            -e AI_PROVIDER="none" \
+            -e ENVIRONMENT="test" \
+            ksp-crime-intel-api:ci-${{ github.sha }}
+          sleep 5
+          curl --fail http://localhost:8000/api/v1/health || (docker logs ksp-api-smoke && exit 1)
+          docker stop ksp-api-smoke
