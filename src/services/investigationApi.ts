@@ -389,7 +389,7 @@ export async function sendFollowUp(
       }
       reportText = `[DEVELOPER WARNING: Local mock action active]\n\nACTION TAKEN: ${desc}, ${new Date().toISOString()}.`;
     } else {
-      reportText = `Karnataka State Police Intelligence Assistant online. Processing query: "${queryText}".\n\nPlease enter a suspect name, vehicle registration number, FIR/Crime Number, or specific operational directive to query database records.`;
+      reportText = `**SYSTEM EXCEPTION**: Connection to the central intelligence database (backend) is currently unavailable.\n\nUnable to process real-time query for: "${queryText}". Please ensure the backend server is running and network connectivity is active.`;
     }
 
     return {

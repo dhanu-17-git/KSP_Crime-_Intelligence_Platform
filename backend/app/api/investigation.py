@@ -309,6 +309,71 @@ async def query_investigation(
         logger.info("Thread ID %s not found in store; auto-upgrading to fresh query", thread_id)
         query.thread_id = None
 
+    # ── GLOBAL ACTION INTERCEPTOR ───────────────────────────────────────
+    # Catch actions (like "flag suspect") immediately, even if the thread was lost or it's a fresh query.
+    import re
+    import uuid as import_uuid
+    text_lower = query.query_text.lower()
+    action_call = None
+    
+    if "notify station" in text_lower:
+        station_name = "Nazarbad PS"
+        for station in ["Cubbon Park PS", "Koramangala PS", "HSR Layout PS", "Electronic City PS", "Jayanagar PS", "JP Nagar PS", "Marathahalli PS", "Nazarbad PS"]:
+            if station.lower()[:8] in text_lower:
+                station_name = station
+                break
+        msg_match = re.search(r"notify station\s+(?:[a-zA-Z0-9\s]+?)(?:that|regarding|message|:)\s*(.+)", query.query_text, re.IGNORECASE)
+        action_call = {"name": "notify_station", "args": {"station_name": station_name, "message": msg_match.group(1).strip() if msg_match else f"Alert regarding: {query.query_text}"}}
+    elif "flag suspect" in text_lower or "flag accused" in text_lower:
+        id_match = re.search(r"\b(90\d{3}|\d+)\b", query.query_text)
+        reason_match = re.search(r"(?:flag suspect|flag accused)\s*(?:\b\d+\b)?\s*(?:reason|because|for|:)?\s*(.+)", query.query_text, re.IGNORECASE)
+        action_call = {"name": "flag_suspect", "args": {"suspect_id": int(id_match.group(1)) if id_match else 90001, "reason": reason_match.group(1).strip() if reason_match else "Flagged via officer directive"}}
+    elif "case note" in text_lower or "add note" in text_lower:
+        id_match = re.search(r"\b(90\d{3}|\d+)\b", query.query_text)
+        note_match = re.search(r"(?:case note|add note|add case note)\s*(?:\b\d+\b)?\s*(?:content|text|note|:)?\s*(.+)", query.query_text, re.IGNORECASE)
+        action_call = {"name": "add_case_note", "args": {"case_id": int(id_match.group(1)) if id_match else 90001, "note": note_match.group(1).strip() if note_match else "Officer note recorded."}}
+
+    if action_call:
+        action_name = action_call["name"]
+        args = action_call.get("args", {})
+        action_result = {}
+        if action_name == "notify_station":
+            action_result = await execute_notify_station(db=db, station_name=args.get("station_name", ""), message=args.get("message", ""), thread_id=thread_id)
+        elif action_name == "flag_suspect":
+            action_result = await execute_flag_suspect(db=db, suspect_id=args.get("suspect_id", 0), reason=args.get("reason", ""))
+        elif action_name == "add_case_note":
+            emp_id = int(current_user.id) if current_user.id.isdigit() else None
+            action_result = await execute_add_case_note(db=db, case_id=args.get("case_id", 0), note=args.get("note", ""), current_user_id=emp_id)
+
+        if action_result.get("success", False):
+            if action_name == "notify_station":
+                desc = f"Notified {args.get('station_name')} regarding suspect alert"
+            elif action_name == "flag_suspect":
+                desc = f"Flagged suspect ID {args.get('suspect_id')} ({action_result.get('suspect_name', 'Unknown')}) as active threat"
+            else:
+                desc = f"Added official case note to Case ID {args.get('case_id')}"
+            report_text = f"ACTION TAKEN: {desc}, {action_result.get('timestamp')}."
+            
+            # If thread exists, update conversation history
+            if existing_thread:
+                existing_thread.conversation_history.append({"role": "officer", "content": query.query_text})
+                existing_thread.conversation_history.append({"role": "ai", "content": report_text})
+                
+            return InvestigationResponse(
+                thread_id=thread_id or str(import_uuid.uuid4())[:12],
+                is_follow_up=existing_thread is not None,
+                status="success",
+                type="action",
+                query=query,
+                entities=list(existing_thread.entities_seen) if existing_thread else [],
+                evidence=list(existing_thread.evidence_context) if existing_thread else [],
+                timeline=[],
+                risk=RiskAssessment(score=0, level=RiskLevel.LOW, factors=[]),
+                recommendations=[],
+                report_text=report_text,
+                metadata={"mode": "global_action_interceptor"}
+            )
+
     # ── FOLLOW-UP PATH ──────────────────────────────────────────────────
     if existing_thread is not None:
         extractor = _get_extractor(db)
@@ -500,6 +565,11 @@ async def query_investigation(
         has_data = len(existing_thread.evidence_context) > 0
         report_status = "success" if has_data else "insufficient_data"
 
+        # Final sanitize for follow up query
+        clean_report_text = report_text.replace("**", "").replace("__", "")
+        import re
+        clean_report_text = re.sub(r'(?m)^#+\s+', '', clean_report_text)
+
         return InvestigationResponse(
             thread_id=existing_thread.thread_id,
             is_follow_up=True,
@@ -511,7 +581,7 @@ async def query_investigation(
             timeline=[],
             risk=RiskAssessment(score=0, level=RiskLevel.LOW, factors=[]),
             recommendations=[],
-            report_text=report_text,
+            report_text=clean_report_text,
             metadata={
                 "mode": "follow_up", 
                 "new_entities_found": len(novel),
@@ -539,11 +609,16 @@ async def query_investigation(
 
     _thread_store[new_thread_id] = thread
 
+    # Final sanitize for fresh query
+    clean_report_text = report_text.replace("**", "").replace("__", "")
+    import re
+    clean_report_text = re.sub(r'(?m)^#+\s+', '', clean_report_text)
+
     # Patch result with thread fields
     result.thread_id = new_thread_id
     result.is_follow_up = False
     result.status = "success" if result.evidence else "insufficient_data"
-    result.report_text = report_text
+    result.report_text = clean_report_text
     return result
 
 
@@ -576,10 +651,10 @@ async def _generate_initial_report(query_text: str, thread: ThreadContext) -> st
             for ev in thread.evidence_context[:5]
         )
         return (
-            f"**KSP INTELLIGENCE DOSSIER SUMMARY**\n\n"
-            f"**Query:** {query_text}\n\n"
-            f"**Retrieved Evidence Highlights:**\n{evidence_lines}\n\n"
-            f"**Status:** {len(thread.evidence_context)} matching evidence items identified across KSP databases. "
+            f"KSP INTELLIGENCE DOSSIER SUMMARY\n\n"
+            f"Query: {query_text}\n\n"
+            f"Retrieved Evidence Highlights:\n{evidence_lines}\n\n"
+            f"Status: {len(thread.evidence_context)} matching evidence items identified across KSP databases. "
             f"Further field verification is recommended."
         )
     return (
