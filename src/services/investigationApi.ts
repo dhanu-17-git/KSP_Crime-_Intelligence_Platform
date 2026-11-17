@@ -18,10 +18,7 @@ import type { IntelligenceReport } from './mockDb';
 // ---------------------------------------------------------------------------
 
 const API_BASE =
-  import.meta.env.VITE_API_BASE ??
-  (import.meta.env.DEV
-    ? 'http://localhost:8000/api/v1'
-    : 'https://ksp-crime-intel-api-50044310157.development.catalystappsail.in/api/v1');
+  import.meta.env.VITE_API_BASE ?? 'http://localhost:8000/api/v1';
 
 // ---------------------------------------------------------------------------
 // Backend response types  (mirrors backend/app/investigation/dto.py)

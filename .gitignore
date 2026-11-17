@@ -90,6 +90,4 @@ Thumbs.db
 *.sln
 *.sw?
 
-# ── Cloud / Serverless Deployment Scratch ───────────────────────────────────
-.catalyst/
-.catalystrc.bak
+

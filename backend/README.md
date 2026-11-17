@@ -55,4 +55,4 @@ pytest
 
 ## Deployment Notes
 
-The app writes structured logs to stdout and reads configuration from environment variables, keeping it compatible with containerized deployment and Zoho Catalyst AppSail.
+The app writes structured logs to stdout and reads configuration from environment variables, keeping it compatible with Docker containers, Kubernetes, and cloud container environments.

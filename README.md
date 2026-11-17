@@ -7,13 +7,12 @@
 **AI-assisted criminal intelligence synthesis, multi-source record linkage, and automated investigation dossiers for Karnataka State Police.**
 
 [![CI](https://github.com/dhanu-17-git/KSP_Crime-_Intelligence_Platform/actions/workflows/ci.yml/badge.svg)](https://github.com/dhanu-17-git/KSP_Crime-_Intelligence_Platform/actions/workflows/ci.yml)
-[![CD](https://github.com/dhanu-17-git/KSP_Crime-_Intelligence_Platform/actions/workflows/cd.yml/badge.svg)](https://github.com/dhanu-17-git/KSP_Crime-_Intelligence_Platform/actions/workflows/cd.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.11+](https://img.shields.io/badge/python-3.11%20%7C%203.13-blue.svg)](https://www.python.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB.svg)](https://react.dev)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688.svg)](https://fastapi.tiangolo.com)
 
-[**🌐 Live Web Application**](https://ksp-datathon-2026-60079582909.development.catalystserverless.in/app/index.html) · [**📋 API Documentation**](https://ksp-crime-intel-api-50044310157.development.catalystappsail.in/docs) · [**📄 Specification Docs**](docs/KSP_AI_Investigation_Build_Spec.md)
+[**📄 Specification Docs**](docs/KSP_AI_Investigation_Build_Spec.md) · [**⚖️ License**](LICENSE)
 
 ---
 
@@ -77,7 +76,7 @@ The **KSP Crime Intelligence Platform** bridges these gaps by providing an autho
 | **AI Synthesis** | Google Gemini API (`gemini-flash-latest`) | Formal report authoring with function calling tools |
 | **Authentication** | JWT (`python-jose`), Passlib | Stateless token auth with role & permission enforcement |
 | **Testing & Quality** | Pytest, pytest-asyncio, Oxlint | Comprehensive backend unit testing & frontend linting |
-| **Deployment** | Zoho Catalyst (AppSail & Web Client), Docker | Serverless and containerized deployment paths |
+| **Deployment & Containers** | Docker, Docker Compose | Production containerization and local orchestration |
 
 ---
 
@@ -136,7 +135,6 @@ flowchart TD
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml               # Automated test, lint, and Docker build pipeline
-│       ├── cd.yml               # Automated deployment to Zoho Catalyst
 │       └── security.yml         # Security vulnerability and secret audit
 ├── backend/
 │   ├── app/
