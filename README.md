@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/ksp-logo.jpeg" alt="Karnataka State Police" width="90" />
+
 
 # KSP Crime Intelligence Platform
 
@@ -8,14 +8,13 @@
 
 **Karnataka State Police Datathon 2026 — Problem Statement 1**
 
-[![CI](https://github.com/dhanu-17-git/DATATHON-2026/actions/workflows/ci.yml/badge.svg)](https://github.com/dhanu-17-git/DATATHON-2026/actions/workflows/ci.yml)
-[![CD](https://github.com/dhanu-17-git/DATATHON-2026/actions/workflows/cd.yml/badge.svg)](https://github.com/dhanu-17-git/DATATHON-2026/actions/workflows/cd.yml)
+
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.13-blue.svg)](https://python.org)
 [![React](https://img.shields.io/badge/react-19-61DAFB.svg)](https://react.dev)
 [![FastAPI](https://img.shields.io/badge/fastapi-0.115-009688.svg)](https://fastapi.tiangolo.com)
 
-[**🌐 Live Demo**](https://ksp-datathon-2026-60079582909.development.catalystserverless.in/app/index.html) · [**📋 API Docs**](https://ksp-crime-intel-api-50044310157.development.catalystappsail.in/docs) · [**📄 Build Spec**](KSP_AI_Investigation_Build_Spec.md)
+
 
 ---
 
