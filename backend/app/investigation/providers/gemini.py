@@ -3,6 +3,7 @@ import logging
 from collections.abc import Sequence
 from typing import Any
 
+# pyrefly: ignore [missing-import]
 import httpx
 
 from app.investigation.dto import (

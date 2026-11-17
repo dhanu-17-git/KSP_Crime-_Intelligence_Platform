@@ -50,6 +50,8 @@ class Settings(BaseSettings):
         env_url = os.environ.get("DATABASE_URL")
         if env_url:
             url = env_url
+            if url.startswith("sqlite"):
+                return url
             if url.startswith("postgresql://"):
                 url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
             parsed = urllib.parse.urlparse(url)

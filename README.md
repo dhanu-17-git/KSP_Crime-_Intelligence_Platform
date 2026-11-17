@@ -1,516 +1,294 @@
 <div align="center">
 
-<img src="public/ksp-logo.jpeg" alt="Karnataka State Police" width="90" />
+<img src="public/favicon.svg" alt="Karnataka State Police Logo" width="80" />
 
 # KSP Crime Intelligence Platform
 
-### AI-Powered Investigation & Command Intelligence System
+**AI-assisted criminal intelligence synthesis, multi-source record linkage, and automated investigation dossiers for Karnataka State Police.**
 
-**Karnataka State Police Datathon 2026 — Problem Statement 1**
+[![CI](https://github.com/dhanu-17-git/KSP_Crime-_Intelligence_Platform/actions/workflows/ci.yml/badge.svg)](https://github.com/dhanu-17-git/KSP_Crime-_Intelligence_Platform/actions/workflows/ci.yml)
+[![CD](https://github.com/dhanu-17-git/KSP_Crime-_Intelligence_Platform/actions/workflows/cd.yml/badge.svg)](https://github.com/dhanu-17-git/KSP_Crime-_Intelligence_Platform/actions/workflows/cd.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python: 3.11+](https://img.shields.io/badge/python-3.11%20%7C%203.13-blue.svg)](https://www.python.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB.svg)](https://react.dev)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688.svg)](https://fastapi.tiangolo.com)
 
-[![CI](https://github.com/dhanu-17-git/DATATHON-2026/actions/workflows/ci.yml/badge.svg)](https://github.com/dhanu-17-git/DATATHON-2026/actions/workflows/ci.yml)
-[![CD](https://github.com/dhanu-17-git/DATATHON-2026/actions/workflows/cd.yml/badge.svg)](https://github.com/dhanu-17-git/DATATHON-2026/actions/workflows/cd.yml)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.13-blue.svg)](https://python.org)
-[![React](https://img.shields.io/badge/react-19-61DAFB.svg)](https://react.dev)
-[![FastAPI](https://img.shields.io/badge/fastapi-0.115-009688.svg)](https://fastapi.tiangolo.com)
-
-[**🌐 Live Demo**](https://ksp-datathon-2026-60079582909.development.catalystserverless.in/app/index.html) · [**📋 API Docs**](https://ksp-crime-intel-api-50044310157.development.catalystappsail.in/docs) · [**📄 Build Spec**](KSP_AI_Investigation_Build_Spec.md)
+[**🌐 Live Web Application**](https://ksp-datathon-2026-60079582909.development.catalystserverless.in/app/index.html) · [**📋 API Documentation**](https://ksp-crime-intel-api-50044310157.development.catalystappsail.in/docs) · [**📄 Specification Docs**](docs/KSP_AI_Investigation_Build_Spec.md)
 
 ---
 
-> **Demo Credentials** — `Username: IPS001` · `Password: demo123`
+> **Demo Credentials** — `Officer ID: IPS001` · `Password: demo123`
 
 </div>
 
 ---
 
-## Overview
+## Why This Exists (The Problem It Solves)
 
-The KSP Crime Intelligence Platform is a full-stack, AI-powered law enforcement investigation assistant built for the Karnataka State Police Datathon 2026. It transforms natural-language officer queries into structured, multi-source intelligence dossiers — cross-referencing FIR databases, ANPR vehicle logs, suspect biometric profiles, and CDR records in real time.
+Law enforcement officers frequently combat fragmented intelligence distributed across disconnected data silos—FIR registries, ANPR (Automatic Number Plate Recognition) logs, suspect records, arrest warrants, and call detail records (CDR). Cross-jurisdictional investigations between police stations require hours of manual paperwork, phone inquiries, and ad-hoc record correlation.
 
-**Core design principle:** Free natural-language input → formal, authoritative intelligence output. Not a chatbot. Not a CRUD system. An agentic investigation engine.
-
----
-
-## Screenshots
-
-| Dashboard — Command Center | AI Investigation Workspace |
-|:-:|:-:|
-| Live KPI metrics, GIS crime map, active incident feed | Multi-source dossier pipeline with Gemini AI analysis |
-
-| Suspect Intel Registry | Criminal Network Graph |
-|:-:|:-:|
-| Risk-scored profiles with gang affiliations | Interactive D3-style syndicate link visualization |
+The **KSP Crime Intelligence Platform** bridges these gaps by providing an authoritative, AI-assisted investigation copilot:
+- Accepts **free natural language input** from investigating officers (e.g. *"Find all suspects linked to vehicle KA05MJ4421 in Koramangala"*).
+- Extracts entities (suspect names, registration numbers, FIR IDs, locations) and executes **phonetic cross-table queries**.
+- Computes multi-factor **risk assessment scores** and generates structured, court-admissible dossiers in seconds.
+- Enables **agentic actions**: allows officers to trigger real-time station alerts, flag flight-risk suspects, and append official case notes directly from the console.
 
 ---
 
 ## Key Features
 
-### 🤖 AI Investigation Engine
-- **Natural Language Queries** — Officers type freely; AI extracts entities, retrieves evidence, and generates formal intelligence reports
-- **Multi-Stage Pipeline** — Entity Extraction → FIR/ANPR/CDR Retrieval → Relationship Analysis → Gemini AI Report Generation
-- **Agentic Console** — Direct command interface: notify police stations, flag suspects, log case notes via conversational commands
-- **Thread-Aware Conversations** — Follow-up queries build on prior context using server-side thread management
-
-### 🗄️ Intelligence Data Sources
-- **FIR Database** — Case master records, crime categories, severity classifications
-- **Suspect Registry** — Biometric profiles, gang affiliations, risk scores, arrest history
-- **ANPR Vehicle Logs** — License plate scans, camera locations, ownership cross-references
-- **Criminal Network Graph** — Visualized syndicate link maps with relationship type tagging
-
-### 🗺️ Operational Modules
-- **Live Crime Map** — GIS-based Leaflet incident heatmap for Bengaluru
-- **Analytics Dashboard** — Crime trend charts, district-wise breakdowns, temporal patterns
-- **Formal Report Generator** — Printable, classified investigation dossiers
-- **Bilingual Interface** — Full English + Kannada (ಕನ್ನಡ) language support
-
-### 🔒 Security & Access Control
-- **JWT Authentication** — Stateless token-based auth with role-based access
-- **Officer-Grade UI** — Classified information banners, access-level indicators
-- **Law Enforcement Tone** — AI responses maintain formal, professional police intelligence language
+- **Multi-Stage AI Investigation Pipeline** — Dissects natural language queries into extracted entities, runs targeted database retrieval, scores evidence relevance, and generates structured intelligence dossiers.
+- **Phonetic & Fuzzy Suspect Matching** — Uses Soundex and Metaphone algorithms to catch alias variants and spelling discrepancies across Kannada and English police records.
+- **Interactive Criminal Network Graph** — Visualizes syndicate hierarchies, co-accused associations, shared getaway vehicles, and multi-case links using Apache ECharts.
+- **Geospatial GIS Crime Mapping** — Interactive Leaflet map displaying live crime hotspots, station jurisdictions, and patrol routes across Karnataka.
+- **Conversational Action Execution** — Direct command execution to dispatch station notifications, mark suspects as high-risk threats, and add timestamped case notes with full audit logging.
+- **Role-Based Access Control (RBAC)** — Stateless JWT authentication enforcing granular permissions (`run_ai_queries`, `read_cases`, `flag_suspects`, `admin_override`) for Officer, Inspector, and Admin roles.
+- **Bilingual Interface** — Complete UI localization supporting both English and Kannada (ಕನ್ನಡ) for field personnel.
+- **Offline & Graceful Fallback Architecture** — Operates deterministically via local regex extraction and rule-based heuristic scoring if cloud AI providers or external networks are unavailable.
 
 ---
 
-## Architecture
+## Screenshots
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    KSP Crime Intelligence Platform                  │
-├────────────────────────┬────────────────────────────────────────────┤
-│    Frontend (React)    │           Backend (FastAPI)                │
-│                        │                                            │
-│  ┌──────────────────┐  │  ┌──────────────────────────────────────┐ │
-│  │  AI Workspace    │  │  │  Investigation Engine                │ │
-│  │  - Quick Dossier │◄─┼──│  ┌──────────────┐  ┌─────────────┐ │ │
-│  │  - Agentic Chat  │  │  │  │ Entity       │  │ Retrieval   │ │ │
-│  └──────────────────┘  │  │  │ Extractor    │→ │ Provider    │ │ │
-│  ┌──────────────────┐  │  │  └──────────────┘  └─────────────┘ │ │
-│  │  Dashboard       │  │  │  ┌──────────────┐  ┌─────────────┐ │ │
-│  │  Crime Map       │  │  │  │ Gemini AI    │  │ PostgreSQL  │ │ │
-│  │  Suspect Registry│  │  │  │ Provider     │  │ (Neon)      │ │ │
-│  │  Vehicle Logs    │  │  │  └──────────────┘  └─────────────┘ │ │
-│  │  Network Graph   │  │  └──────────────────────────────────────┘ │
-│  └──────────────────┘  │                                            │
-│                        │  ┌──────────────────────────────────────┐ │
-│  Vite + React 19       │  │  REST API — /api/v1                  │ │
-│  TypeScript            │  │  /investigation/query  (thread-aware) │ │
-│  Tailwind CSS v4       │  │  /auth/login, /auth/me               │ │
-│  React Router v7       │  │  /health                             │ │
-│  Leaflet Maps          │  └──────────────────────────────────────┘ │
-│  ECharts               │                                            │
-│  React Flow            │  FastAPI + SQLAlchemy (async)             │
-└────────────────────────┴────────────────────────────────────────────┘
-                         │
-            ┌────────────┴──────────────┐
-            │   Zoho Catalyst           │
-            │   Web Client (dist/)      │
-            │   AppSail (backend/)      │
-            └───────────────────────────┘
-```
+<div align="center">
+
+| Command Center & GIS Crime Map | AI Investigation Dossier Workspace |
+| :---: | :---: |
+| ![Command Center](docs/images/placeholder.png) | ![Investigation Dossier](docs/images/placeholder.png) |
+
+| Suspect Intelligence Registry | Criminal Syndicate Network Topology |
+| :---: | :---: |
+| ![Suspect Registry](docs/images/placeholder.png) | ![Network Graph](docs/images/placeholder.png) |
+
+</div>
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology | Version |
-|-------|-----------|---------|
-| **Frontend Framework** | React + TypeScript | 19.x + 6.x |
-| **Build Tool** | Vite | 8.x |
-| **Styling** | Tailwind CSS | 4.x |
-| **Routing** | React Router (Hash mode) | 7.x |
-| **Maps** | Leaflet.js | 1.x |
-| **Charts** | Apache ECharts | 6.x |
-| **Network Graphs** | React Flow (@xyflow) | 12.x |
-| **Backend Framework** | FastAPI | 0.115.x |
-| **Runtime** | Python | 3.13 |
-| **ASGI Server** | Uvicorn | 0.34.x |
-| **ORM** | SQLAlchemy (async) | 2.0.x |
-| **Database Driver** | asyncpg | 0.30.x |
-| **Database** | PostgreSQL (Neon serverless) | — |
-| **AI Provider** | Google Gemini API | gemini-flash-latest |
-| **Auth** | JWT (python-jose) | — |
-| **Migrations** | Alembic | 1.14.x |
-| **Testing** | pytest + pytest-asyncio | 8.x |
-| **Deployment** | Zoho Catalyst (AppSail + Web Client) | — |
-| **CI/CD** | GitHub Actions | — |
+| Layer | Technology | Description |
+| :--- | :--- | :--- |
+| **Frontend UI** | React 19, TypeScript, Vite | Single-page application with responsive layouts |
+| **Styling** | Tailwind CSS v4, Lucide Icons | Clean, high-contrast law enforcement theme |
+| **Data Visualization** | Apache ECharts, Leaflet.js | GIS heatmaps and criminal network topology graphs |
+| **Backend Framework** | FastAPI (Python 3.11 / 3.13) | High-performance asynchronous REST API |
+| **Data Layer & ORM** | SQLAlchemy 2.0 (Async), Alembic | Asynchronous querying with schema migrations |
+| **Databases** | PostgreSQL (Neon serverless) / SQLite | Cloud Postgres for production with local SQLite fallback |
+| **AI Synthesis** | Google Gemini API (`gemini-flash-latest`) | Formal report authoring with function calling tools |
+| **Authentication** | JWT (`python-jose`), Passlib | Stateless token auth with role & permission enforcement |
+| **Testing & Quality** | Pytest, pytest-asyncio, Oxlint | Comprehensive backend unit testing & frontend linting |
+| **Deployment** | Zoho Catalyst (AppSail & Web Client), Docker | Serverless and containerized deployment paths |
+
+---
+
+## Architecture Overview
+
+```mermaid
+flowchart TD
+    subgraph Client["Officer Frontend (React 19 + TypeScript)"]
+        UI["Investigation Workspace"]
+        MAP["GIS Crime Map (Leaflet)"]
+        GRAPH["Network Topology (ECharts)"]
+    end
+
+    subgraph API["FastAPI Gateway (/api/v1)"]
+        AUTH["Auth & RBAC Guard (JWT)"]
+        ROUTER["/investigation/query Router"]
+        ACTIONS["Action Dispatcher"]
+    end
+
+    subgraph Pipeline["Investigation Engine"]
+        EXTRACT["Entity Extractor<br/>(Regex / Phonetic / Gemini)"]
+        RETRIEVE["PostgreSQL Retrieval Provider"]
+        RANK["Weighted Evidence Ranker"]
+        RISK["Weighted Risk Scorer"]
+        RECOM["Recommendation Engine"]
+        SYNTH["Report Synthesizer<br/>(Gemini LLM / Fallback)"]
+    end
+
+    subgraph DataSources["Data Tier"]
+        DB[("PostgreSQL / SQLite<br/>FIRs, Accused, Vehicles, CDR")]
+        NOTIF["Notification & Case Notes Store"]
+    end
+
+    UI -->|Bearer JWT + Query| AUTH
+    AUTH --> ROUTER
+    ROUTER --> EXTRACT
+    EXTRACT --> RETRIEVE
+    RETRIEVE -->|SQL Query| DB
+    RETRIEVE --> RANK
+    RANK --> RISK
+    RISK --> RECOM
+    RECOM --> SYNTH
+    SYNTH -->|Structured Dossier Response| UI
+
+    ROUTER -->|Conversational Directives| ACTIONS
+    ACTIONS -->|Notify Station / Flag Suspect / Add Note| NOTIF
+    NOTIF --> DB
+```
 
 ---
 
 ## Project Structure
 
-```
-DATATHON-2026/
+```text
+.
 ├── .github/
 │   └── workflows/
-│       ├── ci.yml          # Test + build on every push/PR
-│       ├── cd.yml          # Deploy to Zoho Catalyst on main merge
-│       └── security.yml    # Weekly dependency vulnerability scan
-│
-├── src/                    # React frontend
-│   ├── pages/
-│   │   ├── AIWorkspace/    # Core AI Investigation module
-│   │   ├── Dashboard/      # Command center with KPIs + copilot
-│   │   ├── Suspects/       # Biometric risk-scored suspect registry
-│   │   ├── Vehicles/       # ANPR vehicle watchlist
-│   │   ├── CriminalNetwork/# Interactive syndicate link graph
-│   │   ├── CrimeMap/       # GIS Leaflet heatmap
-│   │   ├── Analytics/      # Crime trend charts
-│   │   ├── Cases/          # FIR case browser
-│   │   └── Reports/        # Report management
-│   ├── services/
-│   │   ├── investigationApi.ts   # Backend API calls
-│   │   └── mockDb.ts             # Demo data (fallback)
-│   ├── context/
-│   │   └── AppContext.tsx         # Global state (auth, queries, language)
-│   └── components/
-│       └── ui/MapWidget.tsx       # Reusable Leaflet map wrapper
-│
-├── backend/                # FastAPI backend
+│       ├── ci.yml               # Automated test, lint, and Docker build pipeline
+│       ├── cd.yml               # Automated deployment to Zoho Catalyst
+│       └── security.yml         # Security vulnerability and secret audit
+├── backend/
 │   ├── app/
-│   │   ├── api/
-│   │   │   ├── investigation.py  # Main AI pipeline endpoint
-│   │   │   ├── auth.py           # JWT auth endpoints
-│   │   │   └── health.py         # Health check
-│   │   ├── investigation/
-│   │   │   ├── engine.py         # 4-stage investigation orchestrator
-│   │   │   ├── providers/
-│   │   │   │   └── gemini.py     # Gemini AI provider + tools
-│   │   │   ├── entity_extraction.py
-│   │   │   └── retrieval.py      # PostgreSQL retrieval provider
-│   │   ├── models/               # SQLAlchemy ORM models
-│   │   ├── core/
-│   │   │   ├── settings.py       # Pydantic settings
-│   │   │   └── database.py       # Async engine setup
-│   │   └── middleware/
-│   │       └── request_logging.py
-│   ├── alembic/            # Database migrations
-│   ├── tests/              # pytest test suite
-│   ├── Dockerfile          # Production container
-│   ├── requirements.txt
-│   └── main.py             # ASGI entry point
-│
-├── catalyst.json           # Zoho Catalyst deploy config
-├── vite.config.ts
-├── package.json
-└── README.md
+│   │   ├── api/                 # API routers (investigation, health, v1, auth)
+│   │   ├── core/                # Settings, database engine, logging, security
+│   │   ├── database/            # Database session factory and base declarative
+│   │   ├── dependencies/        # FastAPI dependencies (auth, permissions)
+│   │   ├── investigation/       # 4-stage investigation pipeline & AI providers
+│   │   ├── models/              # SQLAlchemy ORM models (FIR, Accused, Vehicle)
+│   │   ├── repositories/        # Database access layer
+│   │   ├── schemas/             # Pydantic request/response schemas
+│   │   ├── seed.py              # Synthetic demo dataset generator
+│   │   └── utils/               # Phonetic algorithms, exceptions, responses
+│   ├── alembic/                 # Database schema migrations
+│   ├── tests/                   # Pytest test suite (14 test cases)
+│   ├── Dockerfile               # Production container definition
+│   └── requirements.txt         # Python dependencies
+├── docs/
+│   ├── images/                  # Documentation screenshots and placeholders
+│   └── KSP_AI_Investigation_Build_Spec.md  # Product architecture specification
+├── src/
+│   ├── pages/                   # AIWorkspace, Dashboard, Suspects, Vehicles, Map
+│   ├── components/              # Shared UI components, Header, Sidebar
+│   ├── context/                 # Application and authentication context
+│   └── services/                # Backend API client & local mock fallbacks
+├── .env.example                 # Environment configuration template
+├── package.json                 # Frontend dependencies and scripts
+└── vite.config.ts               # Vite bundler configuration
 ```
 
 ---
 
-## Getting Started
+## Setup and Run Instructions
 
 ### Prerequisites
-
-| Tool | Minimum Version |
-|------|----------------|
-| Node.js | 20+ |
-| Python | 3.11+ |
-| PostgreSQL | 14+ (or Neon account) |
-| Google Gemini API key | Free tier sufficient |
+- **Node.js**: `v20.x` or `v22.x`
+- **Python**: `3.11+` or `3.13`
+- **Git**
 
 ---
 
-### 1 — Clone the Repository
+### 1. Clone & Configure
 
 ```bash
-git clone https://github.com/dhanu-17-git/DATATHON-2026.git
-cd DATATHON-2026
+git clone https://github.com/dhanu-17-git/KSP_Crime-_Intelligence_Platform.git
+cd KSP_Crime-_Intelligence_Platform
+
+# Create root environment file
+cp .env.example .env
 ```
 
 ---
 
-### 2 — Backend Setup
+### 2. Backend Setup (FastAPI)
 
 ```bash
 cd backend
 
-# Create and activate virtual environment
+# Create and activate Python virtual environment
 python -m venv .venv
-source .venv/bin/activate        # Linux/macOS
-# .venv\Scripts\activate         # Windows PowerShell
+source .venv/bin/activate       # On Linux / macOS
+# .venv\Scripts\activate        # On Windows (PowerShell)
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Configure environment
+# Create backend environment configuration
 cp .env.example .env
 ```
 
-Edit `backend/.env` with your values:
-
+Configure your `backend/.env` file with appropriate values:
 ```env
-# Database — use Neon serverless or local PostgreSQL
-DATABASE_URL=postgresql+asyncpg://user:password@host/ksp_crime_intel?ssl=require
-
-# JWT — generate a strong random secret
-JWT_SECRET_KEY=your-very-long-random-secret-key-here
-
-# Google Gemini AI
-AI_PROVIDER=gemini
-GEMINI_API_KEY=your-gemini-api-key
-GEMINI_MODEL_NAME=gemini-1.5-flash
-
-# App
-ENVIRONMENT=development
-CORS_ORIGINS=["http://localhost:5173"]
+ENVIRONMENT="development"
+DATABASE_URL="sqlite+aiosqlite:///./ksp_crime_intel.db"
+JWT_SECRET_KEY="replace-with-a-random-32-byte-secret"
+AI_PROVIDER="none"   # Change to 'gemini' and supply GEMINI_API_KEY for live LLM
 ```
 
+Seed the local demo database and start the server:
 ```bash
-# Run database migrations
-alembic upgrade head
+# Seed synthetic police dataset (Cases, Suspects, Vehicles, Officers)
+python -m app.seed
 
-# Seed demo data (officers, suspects, FIRs)
-python run.py seed
-
-# Start backend server
+# Start Uvicorn development server
 python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-API is now live at **`http://127.0.0.1:8000`** · Interactive docs at **`/docs`**
+- API Base URL: `http://127.0.0.1:8000/api/v1`
+- Interactive OpenAPI Docs: `http://127.0.0.1:8000/docs`
 
 ---
 
-### 3 — Frontend Setup
+### 3. Frontend Setup (React + Vite)
+
+From the project root:
 
 ```bash
-# From project root
+# Install frontend dependencies
 npm install
 
-# Start development server
+# Start Vite development server
 npm run dev
 ```
 
-Frontend is now live at **`http://localhost:5173`**
-
-> **Login:** `IPS001` / `demo123`
+- Web UI: `http://localhost:5173`
+- Demo Login: `IPS001` / `demo123`
 
 ---
 
-### 4 — Verify Everything Works
+### 4. Running Verification & Tests
 
 ```bash
-# Health check
-curl http://127.0.0.1:8000/api/v1/health
+# Frontend linting
+npm run lint
 
-# Expected: {"status": "healthy", "database": "connected", "version": "0.1.0"}
-```
+# Frontend production build
+npm run build
 
----
-
-## CI/CD Pipeline
-
-The project uses a **two-workflow GitHub Actions pipeline** with full separation between integration and deployment concerns.
-
-### Workflow Overview
-
-```
-Push to any branch ──► ci.yml (Test & Build)
-                           │
-                           ├─ backend-tests     Python pytest, coverage report
-                           ├─ frontend-build    oxlint + TypeScript + Vite build
-                           └─ docker-smoke-test Docker build + container health check
-
-Push to main ────────► cd.yml (Deploy to Catalyst)
-                           │
-                           ├─ pre-deploy-checks  Determine targets (all / frontend / backend)
-                           ├─ deploy-frontend     Vite build → Catalyst Web Client
-                           ├─ deploy-backend      FastAPI → Catalyst AppSail
-                           └─ notify-deployment   GitHub Step Summary report
-```
-
-### Required GitHub Secrets
-
-Go to **Settings → Secrets and variables → Actions** and add:
-
-| Secret | Description |
-|--------|-------------|
-| `CATALYST_AUTH_TOKEN` | Zoho Catalyst CLI auth token |
-| `CATALYST_PROJECT_ID` | Zoho Catalyst project ID |
-| `VITE_API_BASE_URL` | Production backend URL for frontend build |
-
-### Manual Deployment
-
-Use **workflow_dispatch** to deploy selectively from the GitHub Actions UI:
-
-- **`all`** — deploy both frontend and backend
-- **`frontend-only`** — rebuild and push web client only  
-- **`backend-only`** — redeploy AppSail service only
-
----
-
-## Environment Variables Reference
-
-### Backend (`backend/.env`)
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `ENVIRONMENT` | `development` | `development` / `production` / `test` |
-| `DATABASE_URL` | — | PostgreSQL asyncpg connection string |
-| `JWT_SECRET_KEY` | — | **Required.** Long random secret for JWT signing |
-| `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` | `60` | Token lifetime in minutes |
-| `AI_PROVIDER` | `none` | `gemini` or `none` (disables AI, uses fallbacks) |
-| `GEMINI_API_KEY` | `""` | Google Gemini API key |
-| `GEMINI_MODEL_NAME` | `gemini-1.5-pro` | Gemini model identifier |
-| `CORS_ORIGINS` | `["http://localhost:5173"]` | Allowed frontend origins (JSON array) |
-| `LOG_LEVEL` | `INFO` | Python log level |
-
-### Frontend (Vite env)
-
-| Variable | Description |
-|----------|-------------|
-| `VITE_API_BASE_URL` | Backend base URL (e.g. `https://api.example.com/api/v1`) |
-
----
-
-## API Reference
-
-Base URL: `/api/v1`
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| `POST` | `/auth/login` | — | Officer login, returns JWT |
-| `GET` | `/auth/me` | ✅ JWT | Current officer profile |
-| `GET` | `/health` | — | Service health check |
-| `POST` | `/investigation/query` | ✅ JWT | Main AI investigation pipeline |
-| `POST` | `/investigation/followup` | ✅ JWT | Legacy follow-up (use `/query` with `thread_id`) |
-| `GET` | `/firs/` | ✅ JWT | List FIR records |
-| `GET` | `/suspects/` | ✅ JWT | List suspect profiles |
-| `GET` | `/vehicles/` | ✅ JWT | List ANPR vehicle records |
-
-### Investigation Query Request
-
-```json
-POST /api/v1/investigation/query
-Authorization: Bearer <token>
-
-{
-  "query_text": "Find all suspects connected with vehicle KA05MJ4421",
-  "requested_by": "IPS001",
-  "thread_id": null,
-  "is_follow_up": false,
-  "conversation_history": []
-}
-```
-
-### Investigation Query Response
-
-```json
-{
-  "report_text": "Based on ANPR records, vehicle KA05MJ4421...",
-  "thread_id": "550e8400-e29b-41d4-a716-446655440000",
-  "status": "success",
-  "type": "report",
-  "is_follow_up": false,
-  "entities_found": ["KA05MJ4421"],
-  "evidence_count": 7,
-  "risk_score": 82
-}
-```
-
----
-
-## Running Tests
-
-```bash
+# Backend test suite (all 14 test cases)
 cd backend
-
-# Run full test suite
 pytest tests/ -v
-
-# With coverage report
-pytest tests/ --cov=app --cov-report=term-missing
-
-# Run specific test module
-pytest tests/test_investigation_engine.py -v
-
-# Run with parallel workers (faster)
-pip install pytest-xdist
-pytest tests/ -n auto
 ```
 
 ---
 
-## Deployment — Zoho Catalyst
-
-### Manual Deploy
+### 5. Running with Docker
 
 ```bash
-# Install Catalyst CLI
-npm install -g zcatalyst-cli
+# Build Docker image
+docker build -t ksp-crime-intel-api backend/
 
-# Login to Catalyst
-catalyst login
-
-# Full deploy (frontend + backend)
-catalyst deploy
-
-# Frontend only
-catalyst deploy --only web-client
-
-# Backend (AppSail) only
-catalyst deploy --only appsail
+# Run containerized backend
+docker run -p 8000:8000 \
+  -e ENVIRONMENT="test" \
+  -e DATABASE_URL="sqlite+aiosqlite:///./ksp_crime_intel.db" \
+  -e JWT_SECRET_KEY="docker-secret-key" \
+  -e AI_PROVIDER="none" \
+  ksp-crime-intel-api
 ```
-
-### Live Endpoints
-
-| Component | URL |
-|-----------|-----|
-| 🌐 Web Application | https://ksp-datathon-2026-60079582909.development.catalystserverless.in/app/index.html |
-| ⚙️ API Backend | https://ksp-crime-intel-api-50044310157.development.catalystappsail.in |
-| 📋 API Swagger Docs | https://ksp-crime-intel-api-50044310157.development.catalystappsail.in/docs |
 
 ---
 
-## Contributing
+## Roadmap
 
-This project was built for a competitive datathon. For reference, the full product specification is in [KSP_AI_Investigation_Build_Spec.md](KSP_AI_Investigation_Build_Spec.md).
-
-### Development Workflow
-
-```bash
-# Create a feature branch
-git checkout -b feature/your-feature-name
-
-# Make changes, then commit
-git add .
-git commit -m "feat: describe your change"
-
-# Push and open a pull request
-git push origin feature/your-feature-name
-```
-
-### Commit Convention
-
-| Prefix | Usage |
-|--------|-------|
-| `feat:` | New feature |
-| `fix:` | Bug fix |
-| `chore:` | Build, CI, deps |
-| `docs:` | Documentation |
-| `refactor:` | Code restructure |
-| `test:` | Test additions |
-
----
-
-## Known Limitations
-
-- **Gemini API Rate Limits** — The free tier (60 RPM) can cause temporary 429 errors under load. The backend automatically falls back to deterministic responses when Gemini is throttled.
-- **In-Memory Thread Store** — Investigation threads are stored in-memory on the backend process. Threads are lost on AppSail service restarts. Production deployment should use Redis for thread persistence.
-- **Demo Data** — The Suspects, Vehicles, and Network Graph pages use mock data from `src/services/mockDb.ts`. Live integration with the PostgreSQL FIR/Accused tables is implemented in the AI pipeline only.
+- [ ] **Redis-Backed Session Management** — Move in-memory conversational thread store to distributed Redis for multi-instance high availability.
+- [ ] **Live ANPR Stream Ingestion** — Real-time WebSocket streaming from traffic junction cameras with instant stolen vehicle alerts.
+- [ ] **Biometric Facial Recognition Integration** — Cross-matching surveillance camera snapshots against state CCTNS facial databases.
+- [ ] **Voice-to-Dossier Audio Transcription** — Real-time voice note transcription supporting native Kannada dialects for officers on field patrol.
+- [ ] **Interstate Intelligence Federation** — Federated querying interface across neighboring state law enforcement databases (Kerala, Tamil Nadu, Andhra Pradesh).
 
 ---
 
 ## License
 
-[MIT License](LICENSE) — Karnataka State Police Datathon 2026 submission.
-
----
-
-<div align="center">
-
-Built for the **Karnataka State Police Datathon 2026**
-
-**Problem Statement 1 — AI-Powered Investigation Intelligence Platform**
-
-</div>
+This project is licensed under the [MIT License](LICENSE) — see the LICENSE file for details.

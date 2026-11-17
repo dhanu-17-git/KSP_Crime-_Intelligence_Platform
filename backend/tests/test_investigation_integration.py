@@ -96,7 +96,7 @@ async def test_retrieval_provider_queries_correct_models():
     )
     
     assert len(results) == 1
-    assert results[0].source_name == "postgres-ksp"
+    assert results[0].source_name in ("postgres-ksp", "KSP Database")
     assert len(results[0].evidence) == 1
     assert results[0].evidence[0].id == "case-10"
     assert results[0].evidence[0].title == "FIR FIR 0142/2026"

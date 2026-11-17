@@ -389,7 +389,7 @@ export async function sendFollowUp(
       }
       reportText = `[DEVELOPER WARNING: Local mock action active]\n\nACTION TAKEN: ${desc}, ${new Date().toISOString()}.`;
     } else {
-      reportText = `**SYSTEM EXCEPTION**: Connection to the central intelligence database (backend) is currently unavailable.\n\nUnable to process real-time query for: "${queryText}". Please ensure the backend server is running and network connectivity is active.`;
+      reportText = `SYSTEM EXCEPTION: Connection to the central intelligence database (backend) is currently unavailable.\n\nUnable to process real-time query for: "${queryText}". Please ensure the backend server is running and network connectivity is active.`;
     }
 
     return {
