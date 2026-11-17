@@ -1,6 +1,7 @@
 <div align="center">
 
-<img src="public/favicon.svg" alt="Karnataka State Police Logo" width="80" />
+
+ ![Command Center](docs/images/placeholder.png) 
 
 # KSP Crime Intelligence Platform
 
@@ -47,21 +48,6 @@ The **KSP Crime Intelligence Platform** bridges these gaps by providing an autho
 
 ---
 
-## Screenshots
-
-<div align="center">
-
-| Command Center & GIS Crime Map | AI Investigation Dossier Workspace |
-| :---: | :---: |
-| ![Command Center](docs/images/placeholder.png) | ![Investigation Dossier](docs/images/placeholder.png) |
-
-| Suspect Intelligence Registry | Criminal Syndicate Network Topology |
-| :---: | :---: |
-| ![Suspect Registry](docs/images/placeholder.png) | ![Network Graph](docs/images/placeholder.png) |
-
-</div>
-
----
 
 ## Tech Stack
 
